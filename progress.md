@@ -3,8 +3,8 @@
 ## Phase 1 — Project Scaffolding
 - [x] Initialise monorepo (root `package.json`, `client/`, `server/` directories)
 - [x] Create root `.gitignore` (covers Node, React, Docker, env files)
-- [ ] Create `server/.env.example` documenting all required backend env vars
-- [ ] Initialise git repository
+- [x] Create `server/.env.example` documenting all required backend env vars
+- [x] Initialise git repository
 
 ## Phase 2 — Backend Foundation
 - [ ] Initialise Express app (`server/`) with entry point, middleware, and router wiring
