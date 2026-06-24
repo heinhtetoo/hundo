@@ -12,7 +12,7 @@
 - [x] Configure `pg` database connection pool
 - [x] Set up `node-pg-migrate` and create initial migration runner scripts
 - [x] Set up centralised error-handling middleware
-- [ ] Set up `express-rate-limit` on auth routes
+- [x] Set up `express-rate-limit` on auth routes
 - [x] Configure environment variable loading with `dotenv`
 
 ## Phase 3 — Database Migrations
