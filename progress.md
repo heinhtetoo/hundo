@@ -9,8 +9,8 @@
 ## Phase 2 — Backend Foundation
 - [x] Initialise Express app (`server/`) with entry point, middleware, and router wiring
 - [x] Set up Docker Compose for local dev (postgres + backend services)
-- [ ] Configure `pg` database connection pool
-- [ ] Set up `node-pg-migrate` and create initial migration runner scripts
+- [x] Configure `pg` database connection pool
+- [x] Set up `node-pg-migrate` and create initial migration runner scripts
 - [x] Set up centralised error-handling middleware
 - [ ] Set up `express-rate-limit` on auth routes
 - [x] Configure environment variable loading with `dotenv`
