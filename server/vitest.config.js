@@ -4,6 +4,7 @@ module.exports = defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    fileParallelism: false,
     setupFiles: ['./src/test/setup.js'],
     env: {
       DATABASE_URL: 'postgresql://postgres:password@localhost:5432/hundo_test',

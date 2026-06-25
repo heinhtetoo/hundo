@@ -34,11 +34,11 @@
 - [x] `GET /api/v1/games/:rawgId` — fetch single game from RAWG (or local cache)
 
 ## Phase 6 — Backlog API (TDD)
-- [ ] `POST /api/v1/backlog` — upsert game into `games` table, create backlog entry
-- [ ] `GET /api/v1/backlog` — fetch authenticated user's entries (filter, search, sort)
-- [ ] `PUT /api/v1/backlog/:id` — update entry fields (ownership enforced)
-- [ ] `DELETE /api/v1/backlog/:id` — delete entry (ownership enforced)
-- [ ] Zod validation schemas for backlog request bodies
+- [x] `POST /api/v1/backlog` — upsert game into `games` table, create backlog entry
+- [x] `GET /api/v1/backlog` — fetch authenticated user's entries (filter, search, sort)
+- [x] `PUT /api/v1/backlog/:id` — update entry fields (ownership enforced)
+- [x] `DELETE /api/v1/backlog/:id` — delete entry (ownership enforced)
+- [x] Zod validation schemas for backlog request bodies
 
 ## Phase 7 — Stats API (TDD)
 - [ ] `GET /api/v1/stats` — return status counts, genre distribution, completion rate, total hours, top-5 games
@@ -48,7 +48,7 @@
 - [x] Auth route integration tests
 - [x] Auth middleware tests
 - [x] Games route integration tests
-- [ ] Backlog route integration tests (including ownership enforcement)
+- [x] Backlog route integration tests (including ownership enforcement)
 - [ ] Stats route integration tests
 
 ## Phase 9 — Frontend Foundation
