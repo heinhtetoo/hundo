@@ -16,9 +16,9 @@
 - [x] Configure environment variable loading with `dotenv`
 
 ## Phase 3 — Database Migrations
-- [ ] Migration: create `users` table
-- [ ] Migration: create `games` table
-- [ ] Migration: create `backlog_entries` table with status enum and FK constraints
+- [x] Migration: create `users` table
+- [x] Migration: create `games` table
+- [x] Migration: create `backlog_entries` table with status enum and FK constraints
 
 ## Phase 4 — Authentication (TDD)
 - [ ] `POST /api/v1/auth/register` — register with email + password (bcrypt hash)
