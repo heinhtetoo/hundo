@@ -41,7 +41,7 @@
 - [x] Zod validation schemas for backlog request bodies
 
 ## Phase 7 — Stats API (TDD)
-- [ ] `GET /api/v1/stats` — return status counts, genre distribution, completion rate, total hours, top-5 games
+- [x] `GET /api/v1/stats` — return status counts, genre distribution, completion rate, total hours, top-5 games
 
 ## Phase 8 — Testing Setup
 - [x] Configure Vitest + Supertest with a dedicated test database
@@ -49,7 +49,7 @@
 - [x] Auth middleware tests
 - [x] Games route integration tests
 - [x] Backlog route integration tests (including ownership enforcement)
-- [ ] Stats route integration tests
+- [x] Stats route integration tests
 
 ## Phase 9 — Frontend Foundation
 - [ ] Initialise React app in `client/` with Vite

@@ -7,6 +7,7 @@ const { verifyToken } = require('./middleware/verifyToken');
 const { router: authRouter } = require('./routes/auth');
 const { router: gamesRouter } = require('./routes/games');
 const { router: backlogRouter } = require('./routes/backlog');
+const { router: statsRouter } = require('./routes/stats');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/games', verifyToken, gamesRouter);
 
 app.use('/api/v1/backlog', verifyToken, backlogRouter);
+app.use('/api/v1/stats', verifyToken, statsRouter);
 
 app.use(errorHandler);
 
