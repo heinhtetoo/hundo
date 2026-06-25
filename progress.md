@@ -21,13 +21,13 @@
 - [x] Migration: create `backlog_entries` table with status enum and FK constraints
 
 ## Phase 4 — Authentication (TDD)
-- [ ] `POST /api/v1/auth/register` — register with email + password (bcrypt hash)
-- [ ] `POST /api/v1/auth/login` — issue access token + refresh token in httpOnly cookies
-- [ ] `POST /api/v1/auth/refresh` — rotate refresh token, issue new access token
-- [ ] `POST /api/v1/auth/logout` — clear both cookies
-- [ ] `GET /api/v1/auth/me` — return current user from access token
-- [ ] Auth middleware (`verifyToken`) — protect all non-auth routes
-- [ ] Zod validation schemas for all auth request bodies
+- [x] `POST /api/v1/auth/register` — register with email + password (bcrypt hash)
+- [x] `POST /api/v1/auth/login` — issue access token + refresh token in httpOnly cookies
+- [x] `POST /api/v1/auth/refresh` — rotate refresh token, issue new access token
+- [x] `POST /api/v1/auth/logout` — clear both cookies
+- [x] `GET /api/v1/auth/me` — return current user from access token
+- [x] Auth middleware (`verifyToken`) — protect all non-auth routes
+- [x] Zod validation schemas for all auth request bodies
 
 ## Phase 5 — Games API (TDD)
 - [ ] `GET /api/v1/games/search?q=` — proxy search to RAWG, return trimmed payload
@@ -44,9 +44,9 @@
 - [ ] `GET /api/v1/stats` — return status counts, genre distribution, completion rate, total hours, top-5 games
 
 ## Phase 8 — Testing Setup
-- [ ] Configure Vitest + Supertest with a dedicated test database
-- [ ] Auth route integration tests
-- [ ] Auth middleware tests
+- [x] Configure Vitest + Supertest with a dedicated test database
+- [x] Auth route integration tests
+- [x] Auth middleware tests
 - [ ] Games route integration tests
 - [ ] Backlog route integration tests (including ownership enforcement)
 - [ ] Stats route integration tests

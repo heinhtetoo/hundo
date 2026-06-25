@@ -3,6 +3,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 
 const { errorHandler } = require('./middleware/errorHandler');
+const { verifyToken } = require('./middleware/verifyToken');
+const { router: authRouter } = require('./routes/auth');
 
 const app = express();
 
@@ -15,6 +17,12 @@ app.use(cookieParser());
 
 app.get('/api/v1/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.use('/api/v1/auth', authRouter);
+
+app.use('/api/v1/backlog', verifyToken, (req, res) => {
+  res.json({ entries: [] });
 });
 
 app.use(errorHandler);
