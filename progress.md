@@ -52,13 +52,13 @@
 - [x] Stats route integration tests
 
 ## Phase 9 — Frontend Foundation
-- [ ] Initialise React app in `client/` with Vite
-- [ ] Configure Tailwind CSS
-- [ ] Set up React Router v6 with all six routes
-- [ ] Set up TanStack Query provider
-- [ ] Set up `AuthContext` (fetch `/api/v1/auth/me` on load, expose login/logout/isAuthenticated)
-- [ ] Create `ProtectedRoute` wrapper component
-- [ ] Configure Vite dev proxy to backend
+- [x] Initialise React app in `client/` with Vite
+- [x] Configure Tailwind CSS
+- [x] Set up React Router v6 with all six routes
+- [x] Set up TanStack Query provider
+- [x] Set up `AuthContext` (fetch `/api/v1/auth/me` on load, expose login/logout/isAuthenticated)
+- [x] Create `ProtectedRoute` wrapper component
+- [x] Configure Vite dev proxy to backend
 
 ## Phase 10 — Frontend Pages & Components
 - [ ] Landing page (`/`) — marketing/logged-out home
