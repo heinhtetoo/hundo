@@ -30,8 +30,8 @@
 - [x] Zod validation schemas for all auth request bodies
 
 ## Phase 5 — Games API (TDD)
-- [ ] `GET /api/v1/games/search?q=` — proxy search to RAWG, return trimmed payload
-- [ ] `GET /api/v1/games/:rawgId` — fetch single game from RAWG (or local cache)
+- [x] `GET /api/v1/games/search?q=` — proxy search to RAWG, return trimmed payload
+- [x] `GET /api/v1/games/:rawgId` — fetch single game from RAWG (or local cache)
 
 ## Phase 6 — Backlog API (TDD)
 - [ ] `POST /api/v1/backlog` — upsert game into `games` table, create backlog entry
@@ -47,7 +47,7 @@
 - [x] Configure Vitest + Supertest with a dedicated test database
 - [x] Auth route integration tests
 - [x] Auth middleware tests
-- [ ] Games route integration tests
+- [x] Games route integration tests
 - [ ] Backlog route integration tests (including ownership enforcement)
 - [ ] Stats route integration tests
 

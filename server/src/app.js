@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const { errorHandler } = require('./middleware/errorHandler');
 const { verifyToken } = require('./middleware/verifyToken');
 const { router: authRouter } = require('./routes/auth');
+const { router: gamesRouter } = require('./routes/games');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/games', verifyToken, gamesRouter);
 
 app.use('/api/v1/backlog', verifyToken, (req, res) => {
   res.json({ entries: [] });

@@ -1,0 +1,53 @@
+const BASE_URL = () => process.env.RAWG_BASE_URL ?? 'https://api.rawg.io/api';
+
+function buildUrl(path, params = {}) {
+  const url = new URL(`${BASE_URL()}${path}`);
+  url.searchParams.set('key', process.env.RAWG_API_KEY ?? '');
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v);
+  }
+  return url.toString();
+}
+
+function trimGame(game) {
+  return {
+    id: game.id,
+    name: game.name,
+    background_image: game.background_image ?? null,
+    genres: game.genres ?? [],
+    platforms: (game.platforms ?? []).map(p => p.platform),
+    rating: game.rating ?? null,
+    released: game.released ?? null,
+  };
+}
+
+function rawgError(message, status) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+async function searchGames(query) {
+  const url = buildUrl('/games', { search: query, page_size: 20 });
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw rawgError('RAWG search failed', 502);
+  }
+  const data = await response.json();
+  return (data.results ?? []).map(trimGame);
+}
+
+async function getGameById(rawgId) {
+  const url = buildUrl(`/games/${rawgId}`);
+  const response = await fetch(url);
+  if (response.status === 404) {
+    throw rawgError('Game not found', 404);
+  }
+  if (!response.ok) {
+    throw rawgError('RAWG request failed', 502);
+  }
+  const game = await response.json();
+  return { ...trimGame(game), description_raw: game.description_raw ?? '' };
+}
+
+module.exports = { searchGames, getGameById };
