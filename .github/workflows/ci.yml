@@ -85,6 +85,6 @@ jobs:
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
-            cd ~/hundo
+            cd ~/docker-blackx6/hundo
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
