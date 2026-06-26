@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { API_BASE } from '../lib/api.js';
 import {
   PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -17,7 +18,7 @@ function useStats() {
   return useQuery({
     queryKey: ['stats'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/stats', { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/v1/stats`, { credentials: 'include' });
       return res.json();
     },
   });

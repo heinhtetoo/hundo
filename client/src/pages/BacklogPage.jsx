@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { API_BASE } from '../lib/api.js';
 
 const STATUSES = ['all', 'backlog', 'playing', 'completed', 'dropped', 'wishlist'];
 const SORT_OPTIONS = [
@@ -65,7 +66,7 @@ function useBacklog({ status, search, sort }) {
       if (status && status !== 'all') params.set('status', status);
       if (search.trim()) params.set('search', search.trim());
       if (sort) params.set('sort', sort);
-      const res = await fetch(`/api/v1/backlog?${params}`, {
+      const res = await fetch(`${API_BASE}/api/v1/backlog?${params}`, {
         credentials: 'include',
       });
       return res.json();

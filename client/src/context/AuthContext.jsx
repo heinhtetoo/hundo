@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { API_BASE } from '../lib/api.js';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +10,7 @@ export function AuthProvider({ children }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    fetch('/api/v1/auth/me', { credentials: 'include' })
+    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
       .then(res => (res.ok ? res.json() : null))
       .then(data => setUser(data?.user ?? null))
       .catch(() => setUser(null))
@@ -17,7 +18,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, password) {
-    const res = await fetch('/api/v1/auth/login', {
+    const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -32,7 +33,7 @@ export function AuthProvider({ children }) {
   }
 
   async function register(email, password) {
-    const res = await fetch('/api/v1/auth/register', {
+    const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -47,7 +48,7 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await fetch('/api/v1/auth/logout', {
+    await fetch(`${API_BASE}/api/v1/auth/logout`, {
       method: 'POST',
       credentials: 'include',
     });

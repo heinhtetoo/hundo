@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { API_BASE } from '../lib/api.js';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,7 +25,7 @@ function useGame(rawgId) {
   return useQuery({
     queryKey: ['game', rawgId],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/games/${rawgId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/games/${rawgId}`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('Game not found');
@@ -37,7 +38,7 @@ function useBacklogEntry(rawgId) {
   return useQuery({
     queryKey: ['backlog', 'all'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/backlog', { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/v1/backlog`, { credentials: 'include' });
       const data = await res.json();
       return data.entries ?? [];
     },
@@ -164,7 +165,7 @@ export default function GameDetailPage() {
 
   const addMutation = useMutation({
     mutationFn: async ({ game, formData }) => {
-      const res = await fetch('/api/v1/backlog', {
+      const res = await fetch(`${API_BASE}/api/v1/backlog`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -191,7 +192,7 @@ export default function GameDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ entryId, formData }) => {
-      const res = await fetch(`/api/v1/backlog/${entryId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/backlog/${entryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -205,7 +206,7 @@ export default function GameDetailPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async entryId => {
-      const res = await fetch(`/api/v1/backlog/${entryId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/backlog/${entryId}`, {
         method: 'DELETE',
         credentials: 'include',
       });

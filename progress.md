@@ -70,7 +70,7 @@
 - [x] Dashboard page (`/dashboard`) — four Recharts charts
 
 ## Phase 11 — Deployment
-- [ ] Write `Dockerfile` for the Express backend
-- [ ] Write production `docker-compose.yml` for OCI
-- [ ] Configure GitHub Actions workflow (run Vitest → SSH deploy to OCI → Vercel auto-deploy)
-- [ ] Set up Vercel project linked to `client/` subdirectory
+- [x] Write `Dockerfile` for the Express backend
+- [x] Write production `docker-compose.yml` for OCI
+- [x] Configure GitHub Actions workflow (run Vitest → SSH deploy to OCI → Vercel auto-deploy)
+- [x] Set up Vercel project linked to `client/` subdirectory
