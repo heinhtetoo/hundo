@@ -76,7 +76,7 @@ jobs:
           context: ./server
           file: ./server/Dockerfile
           push: true
-          platforms: linux/amd64
+          platforms: linux/amd64/v8
           tags: ghcr.io/${{ github.repository }}/backend:latest
 
       - name: Connect to Tailscale
