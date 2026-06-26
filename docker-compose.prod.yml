@@ -9,20 +9,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   backend:
-    image: ghcr.io/${{{ github.repository }}/backend:latest
+    image: ghcr.io/${{ github.repository }}/backend:latest
     restart: unless-stopped
     env_file: .env
     environment:
       DATABASE_URL: >-
         postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/hundo
     ports:
-      - '3000:3000'
+      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy

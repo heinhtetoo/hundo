@@ -18,15 +18,16 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-app.get('/api/v1/health', (req, res) => {
+const BASE = process.env.BASE_PATH ?? '';
+
+app.get(`${BASE}/api/v1/health`, (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/games', verifyToken, gamesRouter);
-
-app.use('/api/v1/backlog', verifyToken, backlogRouter);
-app.use('/api/v1/stats', verifyToken, statsRouter);
+app.use(`${BASE}/api/v1/auth`, authRouter);
+app.use(`${BASE}/api/v1/games`, verifyToken, gamesRouter);
+app.use(`${BASE}/api/v1/backlog`, verifyToken, backlogRouter);
+app.use(`${BASE}/api/v1/stats`, verifyToken, statsRouter);
 
 app.use(errorHandler);
 
