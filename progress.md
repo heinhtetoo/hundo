@@ -61,13 +61,13 @@
 - [x] Configure Vite dev proxy to backend
 
 ## Phase 10 — Frontend Pages & Components
-- [ ] Landing page (`/`) — marketing/logged-out home
-- [ ] Register page (`/register`) — React Hook Form + Zod
-- [ ] Login page (`/login`) — React Hook Form + Zod
-- [ ] Navbar with global game search input
-- [ ] Backlog page (`/backlog`) — collection view with filter, sort, text search
-- [ ] Game detail page (`/games/:id`) — metadata + backlog entry editor
-- [ ] Dashboard page (`/dashboard`) — four Recharts charts
+- [x] Landing page (`/`) — marketing/logged-out home
+- [x] Register page (`/register`) — React Hook Form + Zod
+- [x] Login page (`/login`) — React Hook Form + Zod
+- [x] Navbar with global game search input
+- [x] Backlog page (`/backlog`) — collection view with filter, sort, text search
+- [x] Game detail page (`/games/:id`) — metadata + backlog entry editor
+- [x] Dashboard page (`/dashboard`) — four Recharts charts
 
 ## Phase 11 — Deployment
 - [ ] Write `Dockerfile` for the Express backend
