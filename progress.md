@@ -74,3 +74,8 @@
 - [x] Write production `docker-compose.yml` for OCI
 - [x] Configure GitHub Actions workflow (run Vitest → SSH deploy to OCI → Vercel auto-deploy)
 - [x] Set up Vercel project linked to `client/` subdirectory
+- [x] Add QEMU + Buildx for linux/arm64 cross-platform Docker builds
+- [x] Add `BASE_PATH` support so Express handles `/hundo/api` prefix behind Tailscale Funnel
+- [x] Wire in Tailscale GitHub Action so CI runner can SSH to OCI
+- [x] Fix cross-site cookie sending for Chrome/Firefox (`SameSite=None` in production)
+- [ ] Fix Safari ITP cookie blocking via Vercel proxy rewrites (`/api/*` → OCI backend)
