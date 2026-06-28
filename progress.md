@@ -86,3 +86,11 @@
 - [x] Add inline delete confirmation to prevent accidental removals
 - [x] Add notes character counter (live `/2000` display)
 - [x] Fix dashboard top-rated chart title truncation
+
+## Phase 13 — Session Resilience, Richer Detail, Engagement
+- [x] Add `apiFetch` wrapper with single-flight silent token refresh on 401
+- [x] Redirect to login on real expiry via `auth:expired` event (no manual refresh)
+- [x] Expand game detail: Metacritic, dev/publisher, ESRB, playtime, website
+- [x] Add screenshots gallery (new RAWG screenshots endpoint)
+- [x] Add star-rating widget replacing the rating number input
+- [x] Add richer dashboard stats (avg rating, longest game, top genre, recently completed)

@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { searchGames, getGameById } = require('../lib/rawg');
+const { searchGames, getGameById, getGameScreenshots } = require('../lib/rawg');
 
 const router = Router();
 
@@ -13,6 +13,15 @@ router.get('/search', async (req, res, next) => {
     }
     const games = await searchGames(q.trim());
     res.json({ games });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/:rawgId/screenshots', async (req, res, next) => {
+  try {
+    const screenshots = await getGameScreenshots(req.params.rawgId);
+    res.json({ screenshots });
   } catch (err) {
     next(err);
   }

@@ -57,8 +57,11 @@ describe('Stats API', () => {
       },
       totalHours: 0,
       completionRate: 0,
+      averageRating: null,
+      longestGame: null,
       genreDistribution: [],
       topGames: [],
+      recentlyCompleted: [],
     });
   });
 
@@ -90,6 +93,30 @@ describe('Stats API', () => {
 
       // 2 completed out of 3 active (playing + completed + dropped)
       expect(res.body.stats.completionRate).toBe(66.7);
+    });
+
+    it('returns average rating across rated games', async () => {
+      const res = await agent.get('/api/v1/stats');
+
+      // (9 + 8) / 2 rated games
+      expect(res.body.stats.averageRating).toBe(8.5);
+    });
+
+    it('returns the longest game by hours played', async () => {
+      const res = await agent.get('/api/v1/stats');
+
+      expect(res.body.stats.longestGame).toEqual({
+        title: 'Game Alpha',
+        hours: 20,
+      });
+    });
+
+    it('returns recently completed games, newest first', async () => {
+      const res = await agent.get('/api/v1/stats');
+
+      const recent = res.body.stats.recentlyCompleted;
+      expect(recent).toHaveLength(2);
+      expect(recent.map(g => g.rawg_id)).toEqual([1002, 1001]);
     });
 
     it('returns genre distribution sorted by count descending', async () => {

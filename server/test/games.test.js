@@ -12,7 +12,21 @@ const RAWG_GAME = {
   rating: 4.47,
   released: '2013-09-17',
   description_raw: 'An open world crime game.',
+  metacritic: 92,
+  ratings_count: 6900,
+  developers: [{ id: 1, name: 'Rockstar North' }],
+  publishers: [{ id: 2, name: 'Rockstar Games' }],
+  esrb_rating: { id: 4, name: 'Mature' },
+  playtime: 74,
+  website: 'https://www.rockstargames.com/V/',
   extra_field: 'should be excluded',
+};
+
+const RAWG_SCREENSHOTS = {
+  results: [
+    { id: 1, image: 'https://media.rawg.io/shot1.jpg', extra: 'drop me' },
+    { id: 2, image: 'https://media.rawg.io/shot2.jpg' },
+  ],
 };
 
 function mockFetchOk(body) {
@@ -127,8 +141,43 @@ describe('Games API', () => {
         genres: [{ id: 4, name: 'Action' }],
         platforms: [{ id: 1, name: 'PC' }],
         description_raw: 'An open world crime game.',
+        metacritic: 92,
+        rating_count: 6900,
+        developers: ['Rockstar North'],
+        publishers: ['Rockstar Games'],
+        esrb_rating: 'Mature',
+        playtime: 74,
+        website: 'https://www.rockstargames.com/V/',
       });
       expect(res.body.game).not.toHaveProperty('extra_field');
+    });
+  });
+
+  describe('GET /api/v1/games/:rawgId/screenshots', () => {
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/v1/games/3498/screenshots');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns trimmed screenshot list on success', async () => {
+      mockFetchOk(RAWG_SCREENSHOTS);
+
+      const res = await agent.get('/api/v1/games/3498/screenshots');
+
+      expect(res.status).toBe(200);
+      expect(res.body.screenshots).toEqual([
+        { id: 1, image: 'https://media.rawg.io/shot1.jpg' },
+        { id: 2, image: 'https://media.rawg.io/shot2.jpg' },
+      ]);
+    });
+
+    it('returns 502 when RAWG request fails', async () => {
+      mockFetchError(500);
+
+      const res = await agent.get('/api/v1/games/3498/screenshots');
+
+      expect(res.status).toBe(502);
     });
   });
 });

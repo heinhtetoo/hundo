@@ -37,6 +37,19 @@ async function searchGames(query) {
   return (data.results ?? []).map(trimGame);
 }
 
+function detailExtras(game) {
+  return {
+    description_raw: game.description_raw ?? '',
+    metacritic: game.metacritic ?? null,
+    rating_count: game.ratings_count ?? null,
+    developers: (game.developers ?? []).map(d => d.name),
+    publishers: (game.publishers ?? []).map(p => p.name),
+    esrb_rating: game.esrb_rating?.name ?? null,
+    playtime: game.playtime ?? null,
+    website: game.website ?? null,
+  };
+}
+
 async function getGameById(rawgId) {
   const url = buildUrl(`/games/${rawgId}`);
   const response = await fetch(url);
@@ -47,7 +60,20 @@ async function getGameById(rawgId) {
     throw rawgError('RAWG request failed', 502);
   }
   const game = await response.json();
-  return { ...trimGame(game), description_raw: game.description_raw ?? '' };
+  return { ...trimGame(game), ...detailExtras(game) };
 }
 
-module.exports = { searchGames, getGameById };
+async function getGameScreenshots(rawgId) {
+  const url = buildUrl(`/games/${rawgId}/screenshots`);
+  const response = await fetch(url);
+  if (response.status === 404) {
+    throw rawgError('Game not found', 404);
+  }
+  if (!response.ok) {
+    throw rawgError('RAWG request failed', 502);
+  }
+  const data = await response.json();
+  return (data.results ?? []).map(s => ({ id: s.id, image: s.image }));
+}
+
+module.exports = { searchGames, getGameById, getGameScreenshots };

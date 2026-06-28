@@ -2,15 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext.jsx';
-import { API_BASE } from '../lib/api.js';
+import { apiFetch } from '../lib/api.js';
 
 function useGameSearch(query) {
   return useQuery({
     queryKey: ['gameSearch', query],
     queryFn: async () => {
-      const res = await fetch(
-        `${API_BASE}/api/v1/games/search?q=${encodeURIComponent(query)}`,
-        { credentials: 'include' },
+      const res = await apiFetch(
+        `/api/v1/games/search?q=${encodeURIComponent(query)}`,
       );
       if (!res.ok) return { games: [] };
       return res.json();

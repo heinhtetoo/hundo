@@ -1,34 +1,16 @@
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { API_BASE } from '../lib/api.js';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const STATUSES = ['backlog', 'playing', 'completed', 'dropped', 'wishlist'];
-
-const entrySchema = z.object({
-  status: z.enum(STATUSES),
-  rating: z.preprocess(
-    v => (v === '' ? null : Number(v)),
-    z.number().int().min(1).max(10).nullable(),
-  ),
-  hoursPlayed: z.preprocess(
-    v => (v === '' ? null : Number(v)),
-    z.number().min(0).nullable(),
-  ),
-  notes: z.string().max(2000),
-});
+import { apiFetch } from '../lib/api.js';
+import BacklogEntryForm from '../components/BacklogEntryForm.jsx';
+import GameMeta from '../components/GameMeta.jsx';
+import GameScreenshots from '../components/GameScreenshots.jsx';
 
 function useGame(rawgId) {
   return useQuery({
     queryKey: ['game', rawgId],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/v1/games/${rawgId}`, {
-        credentials: 'include',
-      });
+      const res = await apiFetch(`/api/v1/games/${rawgId}`);
       if (!res.ok) throw new Error('Game not found');
       return res.json();
     },
@@ -39,145 +21,12 @@ function useBacklogEntry(rawgId) {
   return useQuery({
     queryKey: ['backlog', 'all'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/v1/backlog`, { credentials: 'include' });
+      const res = await apiFetch('/api/v1/backlog');
       const data = await res.json();
       return data.entries ?? [];
     },
     select: entries => entries.find(e => e.rawg_id === Number(rawgId)),
   });
-}
-
-function Field({ label, error, children }) {
-  return (
-    <div>
-      <label className="block text-sm text-gray-400 mb-1.5">{label}</label>
-      {children}
-      {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
-    </div>
-  );
-}
-
-function BacklogEntryForm({ game, entry, onSave, onRemove }) {
-  const [confirming, setConfirming] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(entrySchema),
-    defaultValues: {
-      status: entry?.status ?? 'backlog',
-      rating: entry?.rating ?? '',
-      hoursPlayed: entry?.hours_played ?? '',
-      notes: entry?.notes ?? '',
-    },
-  });
-
-  useEffect(() => {
-    if (entry) {
-      reset({
-        status: entry.status,
-        rating: entry.rating ?? '',
-        hoursPlayed: entry.hours_played ?? '',
-        notes: entry.notes ?? '',
-      });
-    }
-  }, [entry, reset]);
-
-  const inputCls = `w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white
-                    outline-none focus:ring-2 focus:ring-indigo-500`;
-
-  return (
-    <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-      <Field label="Status" error={errors.status?.message}>
-        <select {...register('status')} className={inputCls}>
-          {STATUSES.map(s => (
-            <option key={s} value={s} className="capitalize">{s}</option>
-          ))}
-        </select>
-      </Field>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Rating (1–10)" error={errors.rating?.message}>
-          <input
-            {...register('rating')}
-            type="number"
-            min="1"
-            max="10"
-            placeholder="—"
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Hours played" error={errors.hoursPlayed?.message}>
-          <input
-            {...register('hoursPlayed')}
-            type="number"
-            min="0"
-            step="0.5"
-            placeholder="—"
-            className={inputCls}
-          />
-        </Field>
-      </div>
-
-      <Field label="Notes" error={errors.notes?.message}>
-        <textarea
-          {...register('notes')}
-          rows={3}
-          placeholder="Your thoughts…"
-          className={`${inputCls} resize-none`}
-        />
-        <p className="text-xs text-gray-500 text-right mt-1">
-          {(watch('notes') ?? '').length}/2000
-        </p>
-      </Field>
-
-      {confirming ? (
-        <div className="flex items-center gap-3 pt-1">
-          <span className="text-sm text-gray-400 flex-1">Remove this entry?</span>
-          <button
-            type="button"
-            onClick={() => { onRemove(); setConfirming(false); }}
-            className="px-4 py-2.5 bg-red-700 hover:bg-red-600 text-white
-                       rounded-lg transition-colors text-sm"
-          >
-            Yes, remove
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirming(false)}
-            className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300
-                       rounded-lg transition-colors text-sm"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-3 pt-1">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                       text-white font-medium py-2.5 rounded-lg transition-colors"
-          >
-            {entry ? 'Save changes' : 'Add to backlog'}
-          </button>
-          {entry && (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="px-4 py-2.5 bg-gray-700 hover:bg-red-800 text-gray-300
-                         hover:text-white rounded-lg transition-colors text-sm"
-            >
-              Remove
-            </button>
-          )}
-        </div>
-      )}
-    </form>
-  );
 }
 
 export default function GameDetailPage() {
@@ -193,10 +42,9 @@ export default function GameDetailPage() {
 
   const addMutation = useMutation({
     mutationFn: async ({ game, formData }) => {
-      const res = await fetch(`${API_BASE}/api/v1/backlog`, {
+      const res = await apiFetch('/api/v1/backlog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           rawgId: game.id,
           title: game.name,
@@ -221,10 +69,9 @@ export default function GameDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ entryId, formData }) => {
-      const res = await fetch(`${API_BASE}/api/v1/backlog/${entryId}`, {
+      const res = await apiFetch(`/api/v1/backlog/${entryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(formData),
       });
       if (!res.ok) throw new Error('Failed to update entry');
@@ -236,9 +83,8 @@ export default function GameDetailPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async entryId => {
-      const res = await fetch(`${API_BASE}/api/v1/backlog/${entryId}`, {
+      const res = await apiFetch(`/api/v1/backlog/${entryId}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to remove game');
     },
@@ -259,9 +105,6 @@ export default function GameDetailPage() {
   if (gameError) return <p className="text-red-400">Game not found.</p>;
 
   const game = gameData.game;
-  const releaseYear = game.released
-    ? new Date(game.released).getFullYear()
-    : null;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -274,17 +117,7 @@ export default function GameDetailPage() {
           />
         )}
         <div>
-          <h1 className="text-3xl font-bold mb-2">{game.name}</h1>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {releaseYear && (
-              <span className="text-sm text-gray-400">{releaseYear}</span>
-            )}
-            {game.rating > 0 && (
-              <span className="text-sm text-gray-400">
-                · ★ {game.rating.toFixed(1)} RAWG
-              </span>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold mb-3">{game.name}</h1>
           <div className="flex flex-wrap gap-2 mb-4">
             {game.genres.map(g => (
               <span
@@ -295,7 +128,7 @@ export default function GameDetailPage() {
               </span>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-5">
             {game.platforms.map(p => (
               <span
                 key={p.id}
@@ -305,12 +138,16 @@ export default function GameDetailPage() {
               </span>
             ))}
           </div>
+          <div className="mb-6">
+            <GameMeta game={game} />
+          </div>
           {game.description_raw && (
             <p className="text-gray-400 text-sm leading-relaxed line-clamp-6">
               {game.description_raw}
             </p>
           )}
         </div>
+        <GameScreenshots rawgId={rawgId} />
       </div>
 
       <div className="bg-gray-800 rounded-xl p-6 h-fit">
@@ -318,7 +155,6 @@ export default function GameDetailPage() {
           {entry ? 'Your entry' : 'Add to backlog'}
         </h2>
         <BacklogEntryForm
-          game={game}
           entry={entry}
           onSave={handleSave}
           onRemove={() => deleteMutation.mutate(entry.id)}

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { API_BASE } from '../lib/api.js';
+import { Link } from 'react-router-dom';
+import { apiFetch } from '../lib/api.js';
 import {
   PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -18,7 +19,7 @@ function useStats() {
   return useQuery({
     queryKey: ['stats'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/v1/stats`, { credentials: 'include' });
+      const res = await apiFetch('/api/v1/stats');
       return res.json();
     },
   });
@@ -56,6 +57,9 @@ export default function DashboardPage() {
     rating: g.rating,
   }));
 
+  const topGenre = stats.genreDistribution[0]?.genre ?? '—';
+  const recentlyCompleted = stats.recentlyCompleted ?? [];
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
@@ -64,6 +68,15 @@ export default function DashboardPage() {
         <StatCard label="Total Games" value={totalGames} />
         <StatCard label="Completion Rate (active)" value={`${stats.completionRate}%`} />
         <StatCard label="Hours Played" value={`${stats.totalHours}h`} />
+        <StatCard
+          label="Average Rating"
+          value={stats.averageRating != null ? `★ ${stats.averageRating}` : '—'}
+        />
+        <StatCard label="Top Genre" value={topGenre} />
+        <StatCard
+          label={stats.longestGame ? stats.longestGame.title : 'Longest Game'}
+          value={stats.longestGame ? `${stats.longestGame.hours}h` : '—'}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -147,6 +160,41 @@ export default function DashboardPage() {
                 <Bar dataKey="rating" fill="#f59e0b" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {recentlyCompleted.length > 0 && (
+          <div className="bg-gray-800 rounded-xl p-6 col-span-2">
+            <h2 className="font-semibold mb-4 text-gray-200">
+              Recently Completed
+            </h2>
+            <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {recentlyCompleted.map(game => (
+                <li key={game.rawg_id}>
+                  <Link
+                    to={`/games/${game.rawg_id}`}
+                    className="block group"
+                  >
+                    {game.cover_image_url ? (
+                      <img
+                        src={game.cover_image_url}
+                        alt={game.title}
+                        className="w-full h-24 object-cover rounded-lg
+                                   group-hover:ring-2 group-hover:ring-indigo-500"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-gray-700 rounded-lg" />
+                    )}
+                    <p className="text-xs text-gray-300 mt-1 line-clamp-1">
+                      {game.title}
+                    </p>
+                    {game.rating && (
+                      <p className="text-xs text-amber-400">★ {game.rating}</p>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
