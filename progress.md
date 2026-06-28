@@ -94,3 +94,28 @@
 - [x] Add screenshots gallery (new RAWG screenshots endpoint)
 - [x] Add star-rating widget replacing the rating number input
 - [x] Add richer dashboard stats (avg rating, longest game, top genre, recently completed)
+
+## Phase 14 — Multi-status Filter, User-defined Sort Order, PRD Sync
+
+### Backlog filtering & sorting (to original PRD spec)
+- [x] Backend: parse `status` as comma-separated list, validate against `STATUSES`, filter via `be.status::text = ANY($n)` (`server/src/routes/backlog.js`)
+- [x] Backend: accept `order` param (asc/desc, whitelisted), fall back to `SORT_MAP` column default; keep `SORT_MAP` as the sort-column whitelist
+- [x] Frontend: multi-select status toggle buttons + `All` clear button (`client/src/pages/BacklogPage.jsx`)
+- [x] Frontend: asc/desc order toggle beside the sort dropdown; send `status` (joined) + `order`, add both to query key
+- [x] Tests: multi-status filter, invalid-status ignored, user-defined order asc/desc (`server/test/backlog.test.js`)
+
+### PRD.md sync (approved edits)
+- [x] Point 1 (line 80): rewrite token-refresh to describe the actual `apiFetch` wrapper
+- [x] Point 2 (line 78): cookies `SameSite=Lax` + same-origin Vercel proxy (not `SameSite=None`)
+- [x] Point 3 (line 81): add `register`, `user`, `isLoading` to AuthContext exposed values
+- [x] Point 4 (lines 94–98, story 12): add screenshots endpoint + enriched detail payload/story
+- [x] Point 6 (line 110, stories 26/28/30): stats = active completion rate, top-5 by rating, avg rating, longest game, recently completed; pie chart; new stories
+- [x] Point 7 (lines 112–119): add react-hot-toast + star-rating widget to frontend stack
+- [x] Point 8 (General UX): add toast confirmation, delete confirmation, notes counter stories
+- [x] Point 9 (deployment): Tailscale Funnel, `BASE_PATH` (`/hundo/api`), Vercel `/api/*` rewrites, Tailscale CI action
+- [x] Point 5 (line 103): keep multi-status + asc/desc intent; use as-built `search` param name and add `order`
+- [x] Minor: note rate limiting skipped in test env; suite now at 64 tests
+
+### Verify
+- [x] `npm test` (server) and `npm run build` (client) pass
+- [x] Manual: multi-status union, asc/desc flip, `All` clears; PRD internally consistent

@@ -29,7 +29,7 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 
 ### Game Detail
 
-12. As a logged-in user, I want to view a game's detail page showing its cover image, title, release year, genres, and platforms, so that I have full context before adding it.
+12. As a logged-in user, I want to view a game's detail page showing its cover image, title, release year, genres, platforms, Metacritic score, developer, publisher, ESRB rating, average playtime, and official website, so that I have full context before adding it. I also want to browse a screenshot gallery on the same page.
 13. As a logged-in user, I want to add a game to my backlog directly from its detail page, so that the action is one step.
 14. As a logged-in user who already has the game in my backlog, I want to edit my backlog entry directly from the game's detail page, so that I can update it without searching for it in my collection.
 
@@ -49,12 +49,16 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 
 ### Stats Dashboard
 
-26. As a logged-in user, I want to see a donut chart breaking down my backlog by status, so that I can see at a glance how much of my collection I have completed versus left to play.
+26. As a logged-in user, I want to see a pie chart breaking down my backlog by status, so that I can see at a glance how much of my collection I have completed versus left to play.
 27. As a logged-in user, I want to see a horizontal bar chart of my top genres by number of games, so that I can understand my genre preferences.
-28. As a logged-in user, I want to see my overall completion rate as a single stat, so that I can track my progress through my collection over time.
+28. As a logged-in user, I want to see my completion rate over active games (completed, playing, and dropped — excluding wishlist and backlog) as a single stat, so that I can track my progress through games I have actually engaged with.
 29. As a logged-in user, I want to see my total hours played across all backlog entries, so that I know how much time I have invested in gaming.
-30. As a logged-in user, I want to see a list of my top 5 most-played games by hours, so that I can see where I have spent the most time.
+30. As a logged-in user, I want to see a list of my top 5 highest-rated games, so that I can quickly recall my favourites.
 31. As a logged-in user with an empty backlog, I want the dashboard to show an empty state with a prompt to add games, so that I am not left with a broken or empty-looking page.
+32a. As a logged-in user, I want to see my average rating across all rated games, so that I have a sense of my overall enjoyment.
+32b. As a logged-in user, I want to see my longest game by hours played, so that I can identify where I have spent the most time.
+32c. As a logged-in user, I want to see my most-played genre, so that I understand my genre preferences at a glance.
+32d. As a logged-in user, I want to see a list of my recently completed games, so that I can remember what I just finished.
 
 ### General UX
 
@@ -62,6 +66,9 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 33. As an unauthenticated user trying to access a protected page, I want to be redirected to the login page, so that I am prompted to authenticate rather than seeing an error.
 34. As a user on any page, I want clear loading states during data fetches, so that I know the app is working and not frozen.
 35. As a user on any page, I want clear error messages when something goes wrong, so that I understand what happened and what to do next.
+36. As a logged-in user, I want to receive a toast notification when I add, save, or delete a backlog entry, so that I know my action succeeded without having to reload the page.
+37. As a logged-in user, I want a confirmation step before deleting a backlog entry, so that I do not accidentally remove a game from my collection.
+38. As a logged-in user, I want to see a live character count while writing notes, so that I know how close I am to the 2,000-character limit.
 
 ## Implementation Decisions
 
@@ -75,10 +82,10 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 ### Authentication
 
 - JWTs are used for stateless authentication. The access token is short-lived (15 minutes); the refresh token is long-lived.
-- Both tokens are stored in httpOnly, Secure, SameSite=Strict cookies — never in `localStorage` or `sessionStorage`.
+- Both tokens are stored in `httpOnly` cookies (`Secure` in production, `SameSite=Lax`). Cookies are never stored in `localStorage` or `sessionStorage`. Cross-site and Safari ITP restrictions are avoided by proxying all API requests through the same Vercel origin (`/api/*` → OCI backend), keeping cookie sends same-origin.
 - Password hashing uses bcrypt.
-- Token refresh is handled transparently by the frontend using a TanStack Query retry interceptor or an Axios interceptor that calls `POST /api/v1/auth/refresh` on 401 responses.
-- Auth state on the frontend is managed by a single `AuthContext` that fetches the current user from `GET /api/v1/auth/me` on app load and exposes `login`, `logout`, and `isAuthenticated`.
+- Token refresh is handled transparently by a custom `apiFetch` wrapper. On any 401 response, the wrapper calls `POST /api/v1/auth/refresh` (with single-flight deduplication to prevent concurrent refresh races), retries the original request once, and emits an `auth:expired` DOM event if the refresh also fails. `AuthContext` listens for that event, clears auth state, and triggers a redirect to `/login` via `ProtectedRoute`.
+- Auth state on the frontend is managed by a single `AuthContext` that fetches the current user from `GET /api/v1/auth/me` on app load and exposes `login`, `logout`, `register`, `user`, `isLoading`, and `isAuthenticated`.
 - Rate limiting via `express-rate-limit` is applied to all `/api/v1/auth/*` routes (10 requests per 15 minutes per IP).
 
 ### Database Schema
@@ -95,19 +102,20 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 
 - All RAWG API requests originate from the Express backend. The RAWG API key is never exposed to the browser.
 - `GET /api/v1/games/search?q=<query>` proxies to RAWG's game list endpoint and returns a trimmed payload.
-- `GET /api/v1/games/:rawgId` fetches a single game from RAWG (or serves the local record if already stored).
+- `GET /api/v1/games/:rawgId` fetches a single game from RAWG. The detail payload includes: id, name, background_image, genres, platforms, description, Metacritic score, rating count, developers, publishers, ESRB rating, average playtime, released date, and website.
+- `GET /api/v1/games/:rawgId/screenshots` returns the game's screenshot list from RAWG (id + image URL per screenshot).
 - On `POST /api/v1/backlog`, the backend upserts the game into the local `games` table before creating the backlog entry.
 
 ### Backlog API
 
-- `GET /api/v1/backlog` — returns the authenticated user's entries. Accepts query params: `status` (comma-separated), `q` (title search), `sort` (`title` | `created_at` | `rating` | `hours_played`), `order` (`asc` | `desc`). Filtering and sorting are handled in SQL.
+- `GET /api/v1/backlog` — returns the authenticated user's entries. Accepts query params: `status` (comma-separated), `search` (title search), `sort` (`title` | `created_at` | `rating` | `hours_played`), `order` (`asc` | `desc`). Filtering and sorting are handled in SQL.
 - `POST /api/v1/backlog` — creates a new entry. Body validated with Zod.
 - `PUT /api/v1/backlog/:id` — updates an entry. Ownership verified before update.
 - `DELETE /api/v1/backlog/:id` — deletes an entry. Ownership verified before delete.
 
 ### Stats API
 
-- `GET /api/v1/stats` — returns all dashboard data in a single response to avoid multiple round trips: status counts, genre distribution, completion rate, total hours played, and top-5 games by hours played. All computed in a single set of SQL queries server-side.
+- `GET /api/v1/stats` — returns all dashboard data in a single response to avoid multiple round trips: status counts, genre distribution, active completion rate (completed ÷ completed+playing+dropped), total hours played, average rating across rated games, longest game by hours played, top-5 games by rating, and recently completed games. All computed in a single set of SQL queries server-side.
 
 ### Frontend Stack
 
@@ -117,6 +125,8 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 - **Forms**: React Hook Form with Zod resolvers via `@hookform/resolvers` — Zod schemas are shared with the backend
 - **Charts**: Recharts
 - **Routing**: React Router v6
+- **Notifications**: react-hot-toast — toast confirmations for add, save, and delete actions
+- **Star-rating widget**: custom `StarRating` component replacing the numeric rating input, providing an interactive 1–10 star selector
 
 ### Error Handling
 
@@ -133,9 +143,9 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 ### Deployment
 
 - **Local development**: Docker Compose runs the Express backend and PostgreSQL together. The frontend runs via `vite dev` with a proxy to the backend.
-- **Production backend**: Docker container on an OCI Ampere A1 free-tier instance. PostgreSQL runs in a container with a volume mounted to OCI block storage for persistence.
-- **Production frontend**: Vercel, auto-deployed from the `main` branch via GitHub integration.
-- **CI/CD**: GitHub Actions on push to `main` — run the Vitest test suite, then deploy to OCI via SSH (`docker compose pull && docker compose up -d`). Vercel deployment is triggered automatically by its GitHub integration.
+- **Production backend**: Docker container on an OCI Ampere A1 free-tier instance. PostgreSQL runs in a container with a volume mounted to OCI block storage for persistence. The backend is exposed over HTTPS via Tailscale Funnel. A `BASE_PATH` environment variable (`/hundo/api`) is set so Express strips the tunnel prefix and routes requests correctly.
+- **Production frontend**: Vercel, auto-deployed from the `main` branch via GitHub integration. Vercel rewrites (`/api/*` → OCI backend) proxy all API requests through the same origin, keeping cookie sends same-origin and bypassing Safari ITP.
+- **CI/CD**: GitHub Actions on push to `main` — run the Vitest test suite, then deploy to OCI via SSH using the Tailscale GitHub Action to connect the CI runner to the private network (`docker compose pull && docker compose up -d`). Vercel deployment is triggered automatically by its GitHub integration.
 - **Database migrations**: `node-pg-migrate`. Migrations run as part of the Docker entrypoint on container start.
 
 ## Testing Decisions
@@ -155,7 +165,9 @@ A single seam: the **Express HTTP API**, tested with Vitest + Supertest against 
 - **Game routes**: search proxy and single-game fetch.
 - **Stats route**: correct aggregation values given a known backlog state.
 - **Auth middleware**: protected routes return 401 without a valid access token.
-- **Rate limiting middleware**: auth endpoints return 429 after the threshold is exceeded.
+- **Rate limiting middleware**: auth endpoints return 429 after the threshold is exceeded. Rate limiting is disabled in the test environment (`NODE_ENV=test`) to avoid interference.
+- **Screenshots route**: authenticated access, trimmed payload, and 502 on RAWG failure.
+- **Stats route**: correct aggregation (average rating, longest game, recently completed, top-5 by rating) given a known backlog state.
 
 ### Prior art
 

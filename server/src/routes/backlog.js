@@ -1,11 +1,23 @@
 const { Router } = require('express');
 const { pool } = require('../db');
 const {
+  STATUSES,
   addToBacklogSchema,
   updateBacklogSchema,
 } = require('../validation/backlogSchemas');
 
 const router = Router();
+
+function parseStatuses(raw) {
+  if (!raw) return [];
+  return raw.split(',').map(s => s.trim()).filter(s => STATUSES.includes(s));
+}
+
+function resolveOrder(raw, defaultDir) {
+  const upper = (raw ?? '').toUpperCase();
+  if (upper === 'ASC' || upper === 'DESC') return upper;
+  return defaultDir;
+}
 
 const SORT_MAP = {
   title:        { col: 'g.title',          dir: 'ASC' },
@@ -110,15 +122,17 @@ router.post('/', async (req, res, next) => {
 
 router.get('/', async (req, res, next) => {
   try {
-    const { status, search, sort } = req.query;
+    const { search, sort, order } = req.query;
     const { col, dir } = SORT_MAP[sort] ?? SORT_MAP.created_at;
+    const resolvedOrder = resolveOrder(order, dir);
 
     const conditions = ['be.user_id = $1'];
     const params = [req.user.userId];
 
-    if (status) {
-      params.push(status);
-      conditions.push(`be.status = $${params.length}`);
+    const statuses = parseStatuses(req.query.status);
+    if (statuses.length > 0) {
+      params.push(statuses);
+      conditions.push(`be.status::text = ANY($${params.length})`);
     }
 
     if (search) {
@@ -129,7 +143,7 @@ router.get('/', async (req, res, next) => {
     const result = await pool.query(
       `${ENTRY_SELECT}
        WHERE ${conditions.join(' AND ')}
-       ORDER BY ${col} ${dir} NULLS LAST`,
+       ORDER BY ${col} ${resolvedOrder} NULLS LAST`,
       params,
     );
 

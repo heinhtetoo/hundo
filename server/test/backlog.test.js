@@ -121,6 +121,59 @@ describe('Backlog API', () => {
       expect(res.body.entries[0].title).toBe('Borderlands 2');
     });
 
+    it('filters by multiple statuses', async () => {
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD);
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD_2);
+      await agent.post('/api/v1/backlog').send({
+        rawgId: 999,
+        title: 'Completed Game',
+        genres: [],
+        platforms: [],
+        status: 'completed',
+      });
+
+      const res = await agent.get('/api/v1/backlog?status=backlog,playing');
+
+      expect(res.status).toBe(200);
+      expect(res.body.entries).toHaveLength(2);
+      const statuses = res.body.entries.map(e => e.status);
+      expect(statuses).toContain('backlog');
+      expect(statuses).toContain('playing');
+    });
+
+    it('ignores invalid status values in filter', async () => {
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD);
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD_2);
+
+      const res = await agent.get('/api/v1/backlog?status=playing,bogus');
+
+      expect(res.status).toBe(200);
+      expect(res.body.entries).toHaveLength(1);
+      expect(res.body.entries[0].status).toBe('playing');
+    });
+
+    it('honours user-defined sort order ascending', async () => {
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD);
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD_2);
+
+      const res = await agent.get('/api/v1/backlog?sort=title&order=asc');
+
+      expect(res.status).toBe(200);
+      expect(res.body.entries[0].title).toBe('Borderlands 2');
+      expect(res.body.entries[1].title).toBe('Grand Theft Auto V');
+    });
+
+    it('honours user-defined sort order descending', async () => {
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD);
+      await agent.post('/api/v1/backlog').send(GAME_PAYLOAD_2);
+
+      const res = await agent.get('/api/v1/backlog?sort=title&order=desc');
+
+      expect(res.status).toBe(200);
+      expect(res.body.entries[0].title).toBe('Grand Theft Auto V');
+      expect(res.body.entries[1].title).toBe('Borderlands 2');
+    });
+
     it('only returns the authenticated user entries', async () => {
       await agent.post('/api/v1/backlog').send(GAME_PAYLOAD);
 

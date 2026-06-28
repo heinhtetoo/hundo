@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api.js';
 
-const STATUSES = ['all', 'backlog', 'playing', 'completed', 'dropped', 'wishlist'];
+const STATUSES = ['backlog', 'playing', 'completed', 'dropped', 'wishlist'];
 const SORT_OPTIONS = [
   { value: 'created_at', label: 'Date added' },
   { value: 'title', label: 'Title' },
@@ -58,14 +58,15 @@ function GameCard({ entry }) {
   );
 }
 
-function useBacklog({ status, search, sort }) {
+function useBacklog({ statuses, search, sort, order }) {
   return useQuery({
-    queryKey: ['backlog', { status, search, sort }],
+    queryKey: ['backlog', { statuses, search, sort, order }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (status && status !== 'all') params.set('status', status);
+      if (statuses.length > 0) params.set('status', statuses.join(','));
       if (search.trim()) params.set('search', search.trim());
       if (sort) params.set('sort', sort);
+      params.set('order', order);
       const res = await apiFetch(`/api/v1/backlog?${params}`);
       return res.json();
     },
@@ -73,12 +74,19 @@ function useBacklog({ status, search, sort }) {
 }
 
 export default function BacklogPage() {
-  const [status, setStatus] = useState('all');
+  const [statuses, setStatuses] = useState([]);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('created_at');
+  const [order, setOrder] = useState('desc');
 
-  const { data, isLoading } = useBacklog({ status, search, sort });
+  const { data, isLoading } = useBacklog({ statuses, search, sort, order });
   const entries = data?.entries ?? [];
+
+  function toggleStatus(s) {
+    setStatuses(prev =>
+      prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+    );
+  }
 
   return (
     <div>
@@ -86,12 +94,21 @@ export default function BacklogPage() {
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex gap-1 bg-gray-800 p-1 rounded-lg">
+          <button
+            onClick={() => setStatuses([])}
+            className={`px-3 py-1.5 rounded-md text-sm capitalize transition-colors
+              ${statuses.length === 0
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-400 hover:text-white'}`}
+          >
+            All
+          </button>
           {STATUSES.map(s => (
             <button
               key={s}
-              onClick={() => setStatus(s)}
+              onClick={() => toggleStatus(s)}
               className={`px-3 py-1.5 rounded-md text-sm capitalize transition-colors
-                ${status === s
+                ${statuses.includes(s)
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-400 hover:text-white'}`}
             >
@@ -110,16 +127,26 @@ export default function BacklogPage() {
                      focus:ring-indigo-500"
         />
 
-        <select
-          value={sort}
-          onChange={e => setSort(e.target.value)}
-          className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
-                     outline-none cursor-pointer"
-        >
-          {SORT_OPTIONS.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-1">
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value)}
+            className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
+                       outline-none cursor-pointer"
+          >
+            {SORT_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setOrder(o => o === 'asc' ? 'desc' : 'asc')}
+            className="bg-gray-800 text-gray-400 hover:text-white rounded-lg
+                       px-3 py-2 text-sm transition-colors"
+            title={order === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {order === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
