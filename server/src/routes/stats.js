@@ -27,7 +27,8 @@ router.get('/', async (req, res, next) => {
         pool.query(
           `SELECT
              COALESCE(SUM(hours_played), 0) AS total_hours,
-             COUNT(*) AS total,
+             COUNT(*) FILTER (WHERE status NOT IN ('wishlist', 'backlog'))
+               AS total,
              COUNT(*) FILTER (WHERE status = 'completed') AS completed
            FROM backlog_entries
            WHERE user_id = $1`,

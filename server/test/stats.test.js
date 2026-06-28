@@ -88,7 +88,8 @@ describe('Stats API', () => {
     it('returns completion rate as a percentage', async () => {
       const res = await agent.get('/api/v1/stats');
 
-      expect(res.body.stats.completionRate).toBe(40);
+      // 2 completed out of 3 active (playing + completed + dropped)
+      expect(res.body.stats.completionRate).toBe(66.7);
     });
 
     it('returns genre distribution sorted by count descending', async () => {

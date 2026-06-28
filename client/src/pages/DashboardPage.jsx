@@ -52,7 +52,7 @@ export default function DashboardPage() {
   }));
 
   const topGamesData = stats.topGames.map(g => ({
-    name: g.title.length > 18 ? `${g.title.slice(0, 18)}…` : g.title,
+    name: g.title,
     rating: g.rating,
   }));
 
@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <StatCard label="Total Games" value={totalGames} />
-        <StatCard label="Completion Rate" value={`${stats.completionRate}%`} />
+        <StatCard label="Completion Rate (active)" value={`${stats.completionRate}%`} />
         <StatCard label="Hours Played" value={`${stats.totalHours}h`} />
       </div>
 
@@ -137,6 +137,9 @@ export default function DashboardPage() {
                   dataKey="name"
                   tick={{ fill: '#9ca3af', fontSize: 11 }}
                   width={120}
+                  tickFormatter={value =>
+                    value.length > 20 ? `${value.slice(0, 20)}…` : value
+                  }
                 />
                 <Tooltip
                   contentStyle={{ background: '#1f2937', border: 'none' }}

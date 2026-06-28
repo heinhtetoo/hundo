@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { API_BASE } from '../lib/api.js';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -57,10 +58,12 @@ function Field({ label, error, children }) {
 }
 
 function BacklogEntryForm({ game, entry, onSave, onRemove }) {
+  const [confirming, setConfirming] = useState(false);
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(entrySchema),
@@ -126,28 +129,53 @@ function BacklogEntryForm({ game, entry, onSave, onRemove }) {
           placeholder="Your thoughts…"
           className={`${inputCls} resize-none`}
         />
+        <p className="text-xs text-gray-500 text-right mt-1">
+          {(watch('notes') ?? '').length}/2000
+        </p>
       </Field>
 
-      <div className="flex gap-3 pt-1">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                     text-white font-medium py-2.5 rounded-lg transition-colors"
-        >
-          {entry ? 'Save changes' : 'Add to backlog'}
-        </button>
-        {entry && (
+      {confirming ? (
+        <div className="flex items-center gap-3 pt-1">
+          <span className="text-sm text-gray-400 flex-1">Remove this entry?</span>
           <button
             type="button"
-            onClick={onRemove}
-            className="px-4 py-2.5 bg-gray-700 hover:bg-red-800 text-gray-300
-                       hover:text-white rounded-lg transition-colors text-sm"
+            onClick={() => { onRemove(); setConfirming(false); }}
+            className="px-4 py-2.5 bg-red-700 hover:bg-red-600 text-white
+                       rounded-lg transition-colors text-sm"
           >
-            Remove
+            Yes, remove
           </button>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300
+                       rounded-lg transition-colors text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
+                       text-white font-medium py-2.5 rounded-lg transition-colors"
+          >
+            {entry ? 'Save changes' : 'Add to backlog'}
+          </button>
+          {entry && (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="px-4 py-2.5 bg-gray-700 hover:bg-red-800 text-gray-300
+                         hover:text-white rounded-lg transition-colors text-sm"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      )}
     </form>
   );
 }
@@ -187,7 +215,8 @@ export default function GameDetailPage() {
       }
       return res.json();
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toast.success('Added to backlog'); },
+    onError: e => toast.error(e.message),
   });
 
   const updateMutation = useMutation({
@@ -201,7 +230,8 @@ export default function GameDetailPage() {
       if (!res.ok) throw new Error('Failed to update entry');
       return res.json();
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toast.success('Entry saved'); },
+    onError: e => toast.error(e.message),
   });
 
   const deleteMutation = useMutation({
@@ -212,7 +242,8 @@ export default function GameDetailPage() {
       });
       if (!res.ok) throw new Error('Failed to remove game');
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); toast.success('Removed from backlog'); },
+    onError: e => toast.error(e.message),
   });
 
   async function handleSave(formData) {

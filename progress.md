@@ -78,4 +78,11 @@
 - [x] Add `BASE_PATH` support so Express handles `/hundo/api` prefix behind Tailscale Funnel
 - [x] Wire in Tailscale GitHub Action so CI runner can SSH to OCI
 - [x] Fix cross-site cookie sending for Chrome/Firefox (`SameSite=None` in production)
-- [ ] Fix Safari ITP cookie blocking via Vercel proxy rewrites (`/api/*` → OCI backend)
+- [x] Fix Safari ITP cookie blocking via Vercel proxy rewrites (`/api/*` → OCI backend)
+
+## Phase 12 — Polish
+- [x] Fix completion rate to exclude wishlist + backlog from denominator
+- [x] Add toast notifications (react-hot-toast) on save / add / delete
+- [x] Add inline delete confirmation to prevent accidental removals
+- [x] Add notes character counter (live `/2000` display)
+- [x] Fix dashboard top-rated chart title truncation
