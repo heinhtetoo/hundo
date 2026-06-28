@@ -2,7 +2,7 @@ const { Router } = require('express');
 const bcrypt = require('bcrypt');
 
 const { pool } = require('../db');
-const { authRateLimiter } = require('../middleware/authRateLimiter');
+const { createAuthRateLimiter } = require('../middleware/authRateLimiter');
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -22,7 +22,7 @@ const {
 
 const router = Router();
 
-router.post('/register', authRateLimiter, async (req, res, next) => {
+router.post('/register', createAuthRateLimiter(), async (req, res, next) => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -59,7 +59,7 @@ router.post('/register', authRateLimiter, async (req, res, next) => {
   }
 });
 
-router.post('/login', authRateLimiter, async (req, res, next) => {
+router.post('/login', createAuthRateLimiter(), async (req, res, next) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -105,7 +105,7 @@ router.post('/login', authRateLimiter, async (req, res, next) => {
   }
 });
 
-router.post('/verify-email', authRateLimiter, async (req, res, next) => {
+router.post('/verify-email', createAuthRateLimiter(), async (req, res, next) => {
   try {
     const parsed = verifyEmailSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -132,7 +132,7 @@ router.post('/verify-email', authRateLimiter, async (req, res, next) => {
   }
 });
 
-router.post('/resend-verification', authRateLimiter, async (req, res, next) => {
+router.post('/resend-verification', createAuthRateLimiter(), async (req, res, next) => {
   try {
     const parsed = resendSchema.safeParse(req.body);
     if (!parsed.success) {
