@@ -6,17 +6,23 @@ const { authRateLimiter } = require('../middleware/authRateLimiter');
 const {
   generateAccessToken,
   generateRefreshToken,
+  verifyAccessToken,
   verifyRefreshToken,
   setTokenCookies,
   clearTokenCookies,
 } = require('../lib/tokens');
-const { registerSchema, loginSchema } = require('../validation/authSchemas');
+const { issueToken, consumeToken } = require('../lib/authTokens');
+const { sendVerificationEmail } = require('../lib/email');
+const {
+  registerSchema,
+  loginSchema,
+  verifyEmailSchema,
+  resendSchema,
+} = require('../validation/authSchemas');
 
 const router = Router();
 
-router.use(authRateLimiter);
-
-router.post('/register', async (req, res, next) => {
+router.post('/register', authRateLimiter, async (req, res, next) => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -29,16 +35,20 @@ router.post('/register', async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, 12);
 
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at',
+      `INSERT INTO users (email, password_hash)
+       VALUES ($1, $2)
+       RETURNING id, email, created_at`,
       [email, passwordHash],
     );
     const user = result.rows[0];
 
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-    const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
-    setTokenCookies(res, accessToken, refreshToken);
+    const raw = await issueToken(user.id, 'email_verify');
+    const link = `${process.env.CLIENT_URL}/verify-email?token=${raw}`;
+    await sendVerificationEmail(email, link);
 
-    res.status(201).json({ user });
+    const body = { message: 'Registration successful. Please check your inbox to verify your email.' };
+    if (process.env.NODE_ENV === 'test') body._verifyToken = raw;
+    res.status(201).json(body);
   } catch (err) {
     if (err.code === '23505') {
       return res.status(409).json({
@@ -49,7 +59,7 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', authRateLimiter, async (req, res, next) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -61,7 +71,7 @@ router.post('/login', async (req, res, next) => {
     const { email, password } = parsed.data;
 
     const result = await pool.query(
-      'SELECT id, email, password_hash FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, email_verified FROM users WHERE email = $1',
       [email],
     );
     const user = result.rows[0];
@@ -79,11 +89,75 @@ router.post('/login', async (req, res, next) => {
       });
     }
 
+    if (!user.email_verified) {
+      return res.status(403).json({
+        error: { message: 'Please verify your email before logging in.', code: 'EMAIL_NOT_VERIFIED' },
+      });
+    }
+
     const accessToken = generateAccessToken({ userId: user.id, email: user.email });
     const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
     setTokenCookies(res, accessToken, refreshToken);
 
     res.json({ user: { id: user.id, email: user.email } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/verify-email', authRateLimiter, async (req, res, next) => {
+  try {
+    const parsed = verifyEmailSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: { message: 'Invalid input', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const userId = await consumeToken(parsed.data.token, 'email_verify');
+    if (!userId) {
+      return res.status(400).json({
+        error: { message: 'Verification link is invalid or has expired.', code: 'INVALID_TOKEN' },
+      });
+    }
+
+    await pool.query(
+      'UPDATE users SET email_verified = true WHERE id = $1',
+      [userId],
+    );
+
+    res.json({ message: 'Email verified. You can now log in.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/resend-verification', authRateLimiter, async (req, res, next) => {
+  try {
+    const parsed = resendSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: { message: 'Invalid input', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const result = await pool.query(
+      'SELECT id, email, email_verified FROM users WHERE email = $1',
+      [parsed.data.email],
+    );
+    const user = result.rows[0];
+
+    let verifyToken;
+    if (user && !user.email_verified) {
+      const raw = await issueToken(user.id, 'email_verify');
+      const link = `${process.env.CLIENT_URL}/verify-email?token=${raw}`;
+      await sendVerificationEmail(user.email, link);
+      verifyToken = raw;
+    }
+
+    const body = { message: 'If that email address needs verification, we have sent a new link.' };
+    if (process.env.NODE_ENV === 'test' && verifyToken) body._verifyToken = verifyToken;
+    res.json(body);
   } catch (err) {
     next(err);
   }
@@ -141,7 +215,6 @@ router.get('/me', async (req, res, next) => {
       });
     }
 
-    const { verifyAccessToken } = require('../lib/tokens');
     const payload = verifyAccessToken(token);
 
     const result = await pool.query(
