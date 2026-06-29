@@ -12,13 +12,17 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 
 ### Authentication
 
-1. As a new user, I want to register with an email and password, so that I can create a private account and backlog.
+1. As a new user, I want to register with an email and password, so that I can create a private account and backlog. I expect to verify my email address before the account can be used.
 2. As a returning user, I want to log in with my email and password, so that I can access my backlog from any device.
 3. As a logged-in user, I want my session to persist across browser refreshes, so that I do not have to log in every time I visit the app.
 4. As a logged-in user, I want my access token to be automatically refreshed in the background, so that my session does not expire mid-use.
 5. As a logged-in user, I want to log out, so that my account is secured when I am done.
 6. As a user with an expired or invalid session, I want to be redirected to the login page, so that I am not left in a broken authenticated state.
 7. As a user, I want my password stored securely, so that my account is not compromised if the database is breached.
+39. As a new user, I want to receive a verification email with a link after registering, so that I can confirm I own the email address before using the app.
+40. As a new user, I want to verify my email by clicking a button on the verification page rather than having it happen automatically when the page loads, so that email-client link prefetching does not consume my single-use link.
+41. As an unverified user, I want my login attempt to be rejected with a clear message and an option to resend the verification email, so that I understand I must verify before I can sign in.
+42. As a user whose verification link has expired or been lost, I want to request a new one, so that I can finish verifying without registering again.
 
 ### Game Search
 
@@ -26,6 +30,13 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 9. As a logged-in user, I want to see search results with a cover image, title, release year, and genres, so that I can identify the correct game at a glance.
 10. As a logged-in user, I want search to be accessible from the navigation bar on every page, so that I can find and add games without navigating away from what I am doing.
 11. As a logged-in user, I want to click through to a game's detail page from search results, so that I can see more information before adding it to my backlog.
+
+### Game Discovery
+
+43. As a logged-in user, I want a Discover page with curated rows — Top Rated, New & Recent Releases, and Popular — so that I can find games to add beyond searching for an exact title.
+44. As a logged-in user, I want to filter discovery by genre, platform, and release year and sort the results in ascending or descending order, so that I can narrow the catalog to what interests me.
+45. As a logged-in user, I want a "Load more" button to page through filtered discovery results, so that I can keep browsing without overwhelming the initial view.
+46. As a logged-in user, I want to click a game card on the Discover page to open its detail page, so that I can add it to my backlog through the existing flow.
 
 ### Game Detail
 
@@ -84,19 +95,27 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 - JWTs are used for stateless authentication. The access token is short-lived (15 minutes); the refresh token is long-lived.
 - Both tokens are stored in `httpOnly` cookies (`Secure` in production, `SameSite=Lax`). Cookies are never stored in `localStorage` or `sessionStorage`. Cross-site and Safari ITP restrictions are avoided by proxying all API requests through the same Vercel origin (`/api/*` → OCI backend), keeping cookie sends same-origin.
 - Password hashing uses bcrypt.
+- Registration creates an unverified account, issues no session cookies, sends a verification email, and returns a "check your inbox" message. Login verifies the password and then rejects unverified accounts with `403 EMAIL_NOT_VERIFIED` before issuing any tokens.
+- Email verification uses single-use tokens stored hashed (SHA-256) in the `auth_tokens` table with a 24-hour expiry. `POST /api/v1/auth/verify-email` consumes the token and sets `email_verified = true`; the verification page triggers this only on an explicit button click, so email-client link prefetching cannot consume the link. `POST /api/v1/auth/resend-verification` is enumeration-safe — it always returns a generic 200, sends a new link only when the account exists and is unverified, and invalidates the previous token.
+- Emails are sent through a pluggable sender selected by the `EMAIL_PROVIDER` environment variable: a no-op in `NODE_ENV=test`, a console-logged link in development, and the Resend HTTP API in production. The send call lives in one place so the transport is swappable.
 - Token refresh is handled transparently by a custom `apiFetch` wrapper. On any 401 response, the wrapper calls `POST /api/v1/auth/refresh` (with single-flight deduplication to prevent concurrent refresh races), retries the original request once, and emits an `auth:expired` DOM event if the refresh also fails. `AuthContext` listens for that event, clears auth state, and triggers a redirect to `/login` via `ProtectedRoute`.
-- Auth state on the frontend is managed by a single `AuthContext` that fetches the current user from `GET /api/v1/auth/me` on app load and exposes `login`, `logout`, `register`, `user`, `isLoading`, and `isAuthenticated`.
-- Rate limiting via `express-rate-limit` is applied to all `/api/v1/auth/*` routes (10 requests per 15 minutes per IP).
+- Auth state on the frontend is managed by a single `AuthContext` that fetches the current user from `GET /api/v1/auth/me` on app load and exposes `login`, `logout`, `register`, `resendVerification`, `user`, `isLoading`, and `isAuthenticated`.
+- Rate limiting via `express-rate-limit` is applied per-route: each of `register`, `login`, `verify-email`, and `resend-verification` has its own independent bucket (10 requests per 15 minutes per IP). Session-maintenance routes (`refresh`, `logout`) and `/me` are intentionally not rate-limited — `refresh` is fired automatically by the client and must not exhaust the credential-endpoint budget.
 
 ### Database Schema
 
 Three primary tables:
 
-- **users**: `id`, `email` (unique), `password_hash`, `created_at`
+- **users**: `id`, `email` (unique), `password_hash`, `email_verified` (boolean, default `false`; existing accounts were backfilled to `true`), `created_at`
 - **games**: `id`, `rawg_id` (unique), `title`, `cover_image_url`, `genres` (jsonb), `platforms` (jsonb), `release_year`, `created_at`
 - **backlog_entries**: `id`, `user_id` (FK → users), `game_id` (FK → games), `status` (enum: `backlog`, `playing`, `completed`, `dropped`, `wishlist`), `rating` (integer 1–10, nullable), `hours_played` (numeric, nullable), `notes` (text, nullable), `created_at`, `updated_at`
 
 The `games` table acts as a local cache of RAWG metadata, populated at the moment a user first adds a game to their backlog. The `rawg_id` unique constraint prevents duplicate game records.
+
+Two supporting tables back the newer features:
+
+- **auth_tokens**: `id`, `user_id` (FK → users, `ON DELETE CASCADE`), `type` (text, e.g. `email_verify`), `token_hash` (SHA-256 hex), `expires_at`, `created_at`. Indexed on `(user_id, type)` and on `token_hash`. The `type` column keeps the table reusable for future single-use token flows such as password reset.
+- **game_collections**: `slug` (primary key), `title`, `payload` (jsonb), `refreshed_at`. Caches the curated Discover rows so they can be served without hitting RAWG on every request.
 
 ### Games API (RAWG)
 
@@ -104,6 +123,10 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 - `GET /api/v1/games/search?q=<query>` proxies to RAWG's game list endpoint and returns a trimmed payload.
 - `GET /api/v1/games/:rawgId` fetches a single game from RAWG. The detail payload includes: id, name, background_image, genres, platforms, description, Metacritic score, rating count, developers, publishers, ESRB rating, average playtime, released date, and website.
 - `GET /api/v1/games/:rawgId/screenshots` returns the game's screenshot list from RAWG (id + image URL per screenshot).
+- `GET /api/v1/games/discover` returns three curated rows — Top Rated, New & Recent Releases, and Popular. It uses lazy stale-while-revalidate caching against the `game_collections` table: the cached payload is served immediately, a row older than 24 hours is refreshed in the background, and the last-good payload is kept if RAWG fails.
+- `GET /api/v1/games/browse` returns a live filtered list. It accepts `genre`, `platform`, `year`, `sort`, `order`, and `page`; `sort` and `order` are whitelisted (as in the backlog API) and the remaining params are passed through to RAWG. The response shape is `{ results, hasNext }`.
+- `GET /api/v1/games/genres` and `GET /api/v1/games/platforms` return RAWG reference lists for the filter dropdowns, cached with the same 24-hour approach.
+- The static discovery routes are declared before `/:rawgId` so Express does not match them as a game id.
 - On `POST /api/v1/backlog`, the backend upserts the game into the local `games` table before creating the backlog entry.
 
 ### Backlog API
@@ -121,7 +144,7 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 
 - **Build tool**: Vite
 - **Styling**: Tailwind CSS
-- **Server state**: TanStack Query (React Query) — handles caching, loading/error states, and cache invalidation after mutations
+- **Server state**: TanStack Query (React Query) — handles caching, loading/error states, cache invalidation after mutations, and infinite-query pagination for the Discover grid's "Load more" button
 - **Forms**: React Hook Form with Zod resolvers via `@hookform/resolvers` — Zod schemas are shared with the backend
 - **Charts**: Recharts
 - **Routing**: React Router v6
@@ -136,7 +159,7 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 
 ### Environment & Configuration
 
-- Backend uses `dotenv`. A committed `.env.example` documents all required variables.
+- Backend uses `dotenv`. A committed `.env.example` documents all required variables, including the email-delivery settings (`EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM`) and `CLIENT_URL`, which is used to build verification links.
 - Frontend requires only `VITE_API_URL` pointing to the deployed backend.
 - Production environment variables are set in the OCI host environment and Vercel dashboard respectively — never committed.
 
@@ -168,6 +191,8 @@ A single seam: the **Express HTTP API**, tested with Vitest + Supertest against 
 - **Rate limiting middleware**: auth endpoints return 429 after the threshold is exceeded. Rate limiting is disabled in the test environment (`NODE_ENV=test`) to avoid interference.
 - **Screenshots route**: authenticated access, trimmed payload, and 502 on RAWG failure.
 - **Stats route**: correct aggregation (average rating, longest game, recently completed, top-5 by rating) given a known backlog state.
+- **Email verification**: registration returns 201 with no auth cookies and an unverified user; login on an unverified account returns 403 `EMAIL_NOT_VERIFIED`; verifying with a valid token flips `email_verified` and lets login succeed; tokens are single-use and reject expired or invalid values; resend-verification returns an identical generic 200 for unknown, pending, and already-verified emails, issuing a usable token only when pending; email transport is a no-op in `NODE_ENV=test`.
+- **Discovery routes**: discover returns three rows and serves the second call within 24 hours from cache (no extra RAWG fetch), keeping the last-good payload on RAWG failure; browse forwards and whitelists filters and paginates; genres and platforms return cached reference lists; all discovery routes return 401 unauthenticated.
 
 ### Prior art
 
@@ -189,6 +214,6 @@ No prior tests exist (greenfield project). The first test file established for a
 
 ## Further Notes
 
-- The RAWG free tier allows 20,000 requests per month. For a personal app this limit is not a concern, but the local `games` table snapshot strategy reduces RAWG calls on subsequent visits by serving cached metadata from the database.
+- The RAWG free tier allows 20,000 requests per month. For a personal app this limit is not a concern, but the local `games` table snapshot strategy reduces RAWG calls on subsequent visits by serving cached metadata from the database. The `game_collections` cache extends this to discovery: curated rows are refreshed at most once every 24 hours, so the Discover page costs a small, flat number of RAWG calls per month regardless of how often it is viewed.
 - The name "Hundo" is gaming slang for 100%-ing a game — fully completing it including all side content and achievements. It reflects the app's purpose of helping players work through their backlog toward full completion.
 - This project is built as both a learning exercise (applying and extending skills from the IBM Cloud Applications Development Foundations course) and a portfolio piece. Architectural decisions favour clarity, correctness, and demonstrable skill over brevity or convenience.

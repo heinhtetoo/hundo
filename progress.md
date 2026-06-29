@@ -119,3 +119,73 @@
 ### Verify
 - [x] `npm test` (server) and `npm run build` (client) pass
 - [x] Manual: multi-status union, asc/desc flip, `All` clears; PRD internally consistent
+
+## Phase 15 — Email Verification + Game Discovery (Browse)
+
+### Part A — Email Verification
+
+#### A1. Database
+- [x] Migration: `ALTER users ADD email_verified boolean NOT NULL DEFAULT false`; backfill existing rows to `true` in the same migration (`server/migrations/`)
+- [x] Migration: `CREATE TABLE auth_tokens (id bigserial PK, user_id bigint FK→users ON DELETE CASCADE, type text NOT NULL, token_hash text NOT NULL, expires_at timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now())`; index `(user_id, type)` and `token_hash`
+
+#### A2. Backend — token + email libs
+- [x] `server/src/lib/authTokens.js` (new): `issueToken(userId, type)` — `crypto.randomBytes(32).toString('hex')`, store SHA-256 hash + expiry (delete any existing same-type row first), return the RAW token
+- [x] `server/src/lib/authTokens.js`: `consumeToken(rawToken, type)` — hash, look up, check expiry, delete on success, return `user_id` or `null`
+- [x] `server/src/lib/email.js` (new): generic `sendEmail({ to, subject, html })` + `sendVerificationEmail(to, link)`; transport via `EMAIL_PROVIDER` env — console.log in dev, no-op in `NODE_ENV=test`, Resend HTTPS in prod (single swappable send call)
+- [x] `server/package.json`: add `resend` dependency
+- [x] `server/.env.example`: add `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM`
+
+#### A3. Backend — auth routes (`server/src/routes/auth.js`)
+- [x] `POST /register`: create user (unverified), `issueToken('email_verify')`, send email with `${CLIENT_URL}/verify-email?token=<raw>`, return `201 { message }`, STOP setting cookies
+- [x] `POST /login`: after password check, if `!email_verified` return `403 { error: { code: 'EMAIL_NOT_VERIFIED' } }` before issuing cookies
+- [x] `POST /verify-email` (new): body `{ token }`; `consumeToken('email_verify')`, set `email_verified = true`; idempotent-friendly response
+- [x] `POST /resend-verification` (new): body `{ email }`; ALWAYS generic `200`; only re-issue + send when account exists AND unverified (enumeration-safe)
+- [x] Confirm all new routes sit behind `authRateLimiter`
+- [x] `server/src/validation/authSchemas.js`: add `verifyEmailSchema` (`token`) + `resendSchema` (`email`)
+
+#### A4. Frontend
+- [x] `client/src/pages/RegisterPage.jsx`: on success show "Check your inbox" state (no auto-login) + resend button
+- [x] `client/src/pages/VerifyEmailPage.jsx` (new) + public route in `client/src/App.jsx`: read `?token=`, show "Verify my account" BUTTON (verify only on click, not page load), on success link to `/login`, handle expired/invalid with resend option
+- [x] `client/src/pages/LoginPage.jsx`: handle `EMAIL_NOT_VERIFIED` 403 — clear message + "resend verification email" action
+- [x] `client/src/context/AuthContext.jsx`: `register()` no longer expects a session; add `resendVerification(email)` helper (reuse `apiFetch`)
+
+#### A5. Tests (`server/test/auth.test.js`)
+- [x] register returns 201, no auth cookies, user is unverified
+- [x] login on unverified account returns 403 `EMAIL_NOT_VERIFIED`
+- [x] verify-email with valid token flips `email_verified` and login then succeeds
+- [x] verify-email with expired/invalid token fails; token is single-use
+- [x] resend-verification returns identical generic 200 for unknown vs pending vs already-verified; issues a usable token when pending
+- [x] email transport is stubbed/no-op in `NODE_ENV=test`
+
+### Part B — Game Discovery (`/discover`)
+
+#### B1. Database
+- [x] Migration: `CREATE TABLE game_collections (slug text PRIMARY KEY, title text NOT NULL, payload jsonb NOT NULL, refreshed_at timestamptz NOT NULL DEFAULT now())` (separate from `games`)
+
+#### B2. Backend — RAWG client (`server/src/lib/rawg.js`)
+- [x] `listGames(params)`: forward `genres`, `platforms`, `dates`, `ordering`, `page`, `page_size` to RAWG `/games`; return the trimmed list shape used by search
+- [x] `getGenres()` / `getPlatforms()`: fetch RAWG reference lists for filter dropdowns
+
+#### B3. Backend — games routes (`server/src/routes/games.js`, behind `verifyToken`)
+- [x] `GET /discover`: 3 curated rows; lazy stale-while-revalidate vs `game_collections` (serve cached payload now; if a row >24h old refresh in background; keep last-good on RAWG failure). Rows: Top Rated (`ordering=-rating` + rating/metacritic floor), New & Recent (`dates=<90d ago>,<today>&ordering=-released`), Popular (`ordering=-added`)
+- [x] `GET /browse`: live filtered grid; params `genre`, `platform`, `year`, `sort`, `order`, `page`; whitelist `sort`/`order` with `SORT_MAP`-style guard (see `backlog.js`); pass through to `rawg.listGames`; return `{ results, hasNext }`
+- [x] `GET /genres` + `GET /platforms`: cached reference lists (reuse 24h cache approach)
+
+#### B4. Frontend
+- [x] Extract shared `client/src/components/GameCard.jsx` from `BacklogPage.jsx` (browse variant, no status/rating badge, links to `/games/:rawgId`)
+- [x] `client/src/pages/DiscoverPage.jsx` (new) + protected route in `App.jsx`: default = 3 curated carousels from `/discover`; on any filter set → grid mode via `useInfiniteQuery` on `/browse` with "Load more" button
+- [x] Filter pane: Genre, Platform, Year, Sort + asc/desc toggle (reuse toggle pattern from `BacklogPage.jsx`)
+- [x] `client/src/components/Navbar.jsx`: add "Discover" link
+
+#### B5. Tests (`server/test/games.test.js`)
+- [x] discover returns 3 rows; second call within 24h serves from cache (no extra RAWG fetch); RAWG failure still serves last-good
+- [x] browse forwards filters, validates/whitelists `sort`/`order`, paginates
+- [x] genres/platforms return cached reference lists
+- [x] all new routes return 401 unauthenticated
+
+### Verify
+- [x] `cd server && npm test` — 86 tests pass (72 auth/backlog/stats/games + 14 new discover/browse/genres/platforms)
+- [x] `cd client && npm run build` — no errors
+- [x] Manual (email transport = console): register → "check your inbox", grab logged link, login blocked (403) until button-click verify, then login succeeds; resend generic; expired token handled
+- [x] Manual: `/discover` rows instant + cache-served on reload; genre/platform/year/sort filters → grid + "Load more"; card click → detail → add to backlog
+- [x] Sync PRD.md: add stories + implementation notes for both features (`auth_tokens`/verification flow; discover endpoints + `game_collections` cache)
