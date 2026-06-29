@@ -76,4 +76,37 @@ async function getGameScreenshots(rawgId) {
   return (data.results ?? []).map(s => ({ id: s.id, image: s.image }));
 }
 
-module.exports = { searchGames, getGameById, getGameScreenshots };
+async function listGames(params = {}) {
+  const url = buildUrl('/games', { page_size: 20, ...params });
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw rawgError('RAWG list failed', 502);
+  }
+  const data = await response.json();
+  return {
+    results: (data.results ?? []).map(trimGame),
+    hasNext: !!data.next,
+  };
+}
+
+async function getGenres() {
+  const url = buildUrl('/genres', { page_size: 40 });
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw rawgError('RAWG genres failed', 502);
+  }
+  const data = await response.json();
+  return (data.results ?? []).map(g => ({ id: g.id, name: g.name, slug: g.slug }));
+}
+
+async function getPlatforms() {
+  const url = buildUrl('/platforms', { page_size: 40 });
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw rawgError('RAWG platforms failed', 502);
+  }
+  const data = await response.json();
+  return (data.results ?? []).map(p => ({ id: p.id, name: p.name, slug: p.slug }));
+}
+
+module.exports = { searchGames, getGameById, getGameScreenshots, listGames, getGenres, getPlatforms };

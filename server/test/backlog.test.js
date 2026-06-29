@@ -23,10 +23,10 @@ const GAME_PAYLOAD_2 = {
 
 async function createAgent(email = 'backlog@example.com') {
   const agent = request.agent(app);
-  await agent.post('/api/v1/auth/register').send({
-    email,
-    password: 'password123',
-  });
+  const password = 'password123';
+  const regRes = await agent.post('/api/v1/auth/register').send({ email, password });
+  await agent.post('/api/v1/auth/verify-email').send({ token: regRes.body._verifyToken });
+  await agent.post('/api/v1/auth/login').send({ email, password });
   return agent;
 }
 

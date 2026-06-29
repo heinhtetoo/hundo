@@ -104,6 +104,12 @@ export default function Navbar() {
                 Backlog
               </Link>
               <Link
+                to="/discover"
+                className="text-sm text-gray-300 hover:text-white"
+              >
+                Discover
+              </Link>
+              <Link
                 to="/dashboard"
                 className="text-sm text-gray-300 hover:text-white"
               >

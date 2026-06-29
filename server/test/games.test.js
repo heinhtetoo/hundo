@@ -51,7 +51,9 @@ describe('Games API', () => {
   beforeEach(async () => {
     vi.stubGlobal('fetch', vi.fn());
     agent = request.agent(app);
-    await agent.post('/api/v1/auth/register').send(TEST_USER);
+    const regRes = await agent.post('/api/v1/auth/register').send(TEST_USER);
+    await agent.post('/api/v1/auth/verify-email').send({ token: regRes.body._verifyToken });
+    await agent.post('/api/v1/auth/login').send(TEST_USER);
   });
 
   afterEach(() => {
@@ -178,6 +180,141 @@ describe('Games API', () => {
       const res = await agent.get('/api/v1/games/3498/screenshots');
 
       expect(res.status).toBe(502);
+    });
+  });
+
+  describe('GET /api/v1/games/discover', () => {
+    const RAWG_LIST = { results: [RAWG_GAME], next: null };
+
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/v1/games/discover');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns three curated rows with games', async () => {
+      mockFetchOk(RAWG_LIST);
+
+      const res = await agent.get('/api/v1/games/discover');
+
+      expect(res.status).toBe(200);
+      expect(res.body.rows).toHaveLength(3);
+      expect(res.body.rows[0].slug).toBe('top-rated');
+      expect(res.body.rows[0].games).toHaveLength(1);
+      expect(res.body.rows[0].games[0].id).toBe(3498);
+    });
+
+    it('serves from cache on second call without extra RAWG fetches', async () => {
+      mockFetchOk(RAWG_LIST);
+
+      await agent.get('/api/v1/games/discover');
+      const callsAfterFirst = fetch.mock.calls.length;
+
+      const res = await agent.get('/api/v1/games/discover');
+
+      expect(res.status).toBe(200);
+      expect(fetch.mock.calls.length).toBe(callsAfterFirst);
+    });
+
+    it('still returns rows when RAWG fails if cache exists', async () => {
+      mockFetchOk(RAWG_LIST);
+      await agent.get('/api/v1/games/discover');
+
+      mockFetchError(500);
+
+      const res = await agent.get('/api/v1/games/discover');
+      expect(res.status).toBe(200);
+      expect(res.body.rows).toHaveLength(3);
+    });
+  });
+
+  describe('GET /api/v1/games/browse', () => {
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/v1/games/browse');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns results with hasNext flag', async () => {
+      mockFetchOk({ results: [RAWG_GAME], next: null });
+
+      const res = await agent.get('/api/v1/games/browse');
+
+      expect(res.status).toBe(200);
+      expect(res.body.results).toHaveLength(1);
+      expect(res.body.hasNext).toBe(false);
+    });
+
+    it('forwards genre and platform filters to RAWG', async () => {
+      mockFetchOk({ results: [], next: null });
+
+      await agent.get('/api/v1/games/browse?genre=action&platform=4');
+
+      const calledUrl = fetch.mock.calls[0][0];
+      expect(calledUrl).toContain('genres=action');
+      expect(calledUrl).toContain('platforms=4');
+    });
+
+    it('forwards year as a dates range', async () => {
+      mockFetchOk({ results: [], next: null });
+
+      await agent.get('/api/v1/games/browse?year=2020');
+
+      const calledUrl = fetch.mock.calls[0][0];
+      expect(calledUrl).toContain('dates=2020-01-01%2C2020-12-31');
+    });
+
+    it('applies ascending sort when order=asc', async () => {
+      mockFetchOk({ results: [], next: null });
+
+      await agent.get('/api/v1/games/browse?sort=rating&order=asc');
+
+      const calledUrl = fetch.mock.calls[0][0];
+      expect(calledUrl).toContain('ordering=rating');
+      expect(calledUrl).not.toContain('ordering=-rating');
+    });
+
+    it('rejects unknown sort values by falling back to -rating', async () => {
+      mockFetchOk({ results: [], next: null });
+
+      await agent.get('/api/v1/games/browse?sort=injection;DROP TABLE');
+
+      const calledUrl = fetch.mock.calls[0][0];
+      expect(calledUrl).toContain('ordering=-rating');
+    });
+  });
+
+  describe('GET /api/v1/games/genres', () => {
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/v1/games/genres');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns genre list', async () => {
+      mockFetchOk({ results: [{ id: 4, name: 'Action', slug: 'action' }] });
+
+      const res = await agent.get('/api/v1/games/genres');
+
+      expect(res.status).toBe(200);
+      expect(res.body.genres).toEqual([{ id: 4, name: 'Action', slug: 'action' }]);
+    });
+  });
+
+  describe('GET /api/v1/games/platforms', () => {
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/v1/games/platforms');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns platform list', async () => {
+      mockFetchOk({ results: [{ id: 4, name: 'PC', slug: 'pc' }] });
+
+      const res = await agent.get('/api/v1/games/platforms');
+
+      expect(res.status).toBe(200);
+      expect(res.body.platforms).toEqual([{ id: 4, name: 'PC', slug: 'pc' }]);
     });
   });
 });

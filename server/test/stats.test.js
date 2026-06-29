@@ -34,10 +34,11 @@ describe('Stats API', () => {
 
   beforeEach(async () => {
     agent = request.agent(app);
-    await agent.post('/api/v1/auth/register').send({
-      email: 'stats@example.com',
-      password: 'password123',
-    });
+    const email = 'stats@example.com';
+    const password = 'password123';
+    const regRes = await agent.post('/api/v1/auth/register').send({ email, password });
+    await agent.post('/api/v1/auth/verify-email').send({ token: regRes.body._verifyToken });
+    await agent.post('/api/v1/auth/login').send({ email, password });
   });
 
   it('returns 401 when not authenticated', async () => {
@@ -142,10 +143,10 @@ describe('Stats API', () => {
 
     it('only returns stats for the authenticated user', async () => {
       const otherAgent = request.agent(app);
-      await otherAgent.post('/api/v1/auth/register').send({
-        email: 'other@example.com',
-        password: 'password123',
-      });
+      const otherCreds = { email: 'other@example.com', password: 'password123' };
+      const regRes = await otherAgent.post('/api/v1/auth/register').send(otherCreds);
+      await otherAgent.post('/api/v1/auth/verify-email').send({ token: regRes.body._verifyToken });
+      await otherAgent.post('/api/v1/auth/login').send(otherCreds);
 
       const res = await otherAgent.get('/api/v1/stats');
 
