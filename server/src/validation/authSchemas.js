@@ -10,4 +10,28 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-module.exports = { registerSchema, loginSchema };
+const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+const resendSchema = z.object({
+  email: z.string().min(1),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().min(1),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8),
+});
+
+module.exports = {
+  registerSchema,
+  loginSchema,
+  verifyEmailSchema,
+  resendSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+};

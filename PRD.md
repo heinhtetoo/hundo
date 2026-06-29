@@ -23,6 +23,9 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 40. As a new user, I want to verify my email by clicking a button on the verification page rather than having it happen automatically when the page loads, so that email-client link prefetching does not consume my single-use link.
 41. As an unverified user, I want my login attempt to be rejected with a clear message and an option to resend the verification email, so that I understand I must verify before I can sign in.
 42. As a user whose verification link has expired or been lost, I want to request a new one, so that I can finish verifying without registering again.
+47. As a user who forgot their password, I want to request a reset link by email, so that I can regain access without creating a new account.
+48. As a user resetting my password, I want to set a new password via the emailed link and then sign in with it, so that I can recover my account securely.
+49. As a user who just reset my password, I want any other active sessions signed out, so that someone who may have had access is locked out.
 
 ### Game Search
 
@@ -98,15 +101,17 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 - Registration creates an unverified account, issues no session cookies, sends a verification email, and returns a "check your inbox" message. Login verifies the password and then rejects unverified accounts with `403 EMAIL_NOT_VERIFIED` before issuing any tokens.
 - Email verification uses single-use tokens stored hashed (SHA-256) in the `auth_tokens` table with a 24-hour expiry. `POST /api/v1/auth/verify-email` consumes the token and sets `email_verified = true`; the verification page triggers this only on an explicit button click, so email-client link prefetching cannot consume the link. `POST /api/v1/auth/resend-verification` is enumeration-safe — it always returns a generic 200, sends a new link only when the account exists and is unverified, and invalidates the previous token.
 - Emails are sent through a pluggable sender selected by the `EMAIL_PROVIDER` environment variable: a no-op in `NODE_ENV=test`, a console-logged link in development, and the Resend HTTP API in production. The send call lives in one place so the transport is swappable.
+- Password reset: `POST /api/v1/auth/forgot-password` is enumeration-safe — it always returns a generic 200 and sends a reset link only when the account exists. `POST /api/v1/auth/reset-password` consumes a single-use token (the same hashed `auth_tokens` mechanism, with a 1-hour expiry), sets the new password hash, and also sets `email_verified = true` (receiving the link proves inbox control). Reset works regardless of verification status; on success the user is redirected to log in (no auto-login).
+- Resetting a password revokes existing sessions: a `users.password_changed_at` timestamp is set on reset, and `POST /api/v1/auth/refresh` rejects any refresh token issued before it. Refresh tokens carry a millisecond-precision `issuedAtMs` claim for this comparison (falling back to the second-precision `iat` for older tokens). Already-issued access tokens remain valid until they expire (≤15 minutes); they are not checked on every request.
 - Token refresh is handled transparently by a custom `apiFetch` wrapper. On any 401 response, the wrapper calls `POST /api/v1/auth/refresh` (with single-flight deduplication to prevent concurrent refresh races), retries the original request once, and emits an `auth:expired` DOM event if the refresh also fails. `AuthContext` listens for that event, clears auth state, and triggers a redirect to `/login` via `ProtectedRoute`.
-- Auth state on the frontend is managed by a single `AuthContext` that fetches the current user from `GET /api/v1/auth/me` on app load and exposes `login`, `logout`, `register`, `resendVerification`, `user`, `isLoading`, and `isAuthenticated`.
+- Auth state on the frontend is managed by a single `AuthContext` that fetches the current user from `GET /api/v1/auth/me` on app load and exposes `login`, `logout`, `register`, `resendVerification`, `requestPasswordReset`, `resetPassword`, `user`, `isLoading`, and `isAuthenticated`.
 - Rate limiting via `express-rate-limit` is applied per-route: each of `register`, `login`, `verify-email`, and `resend-verification` has its own independent bucket (10 requests per 15 minutes per IP). Session-maintenance routes (`refresh`, `logout`) and `/me` are intentionally not rate-limited — `refresh` is fired automatically by the client and must not exhaust the credential-endpoint budget.
 
 ### Database Schema
 
 Three primary tables:
 
-- **users**: `id`, `email` (unique), `password_hash`, `email_verified` (boolean, default `false`; existing accounts were backfilled to `true`), `created_at`
+- **users**: `id`, `email` (unique), `password_hash`, `email_verified` (boolean, default `false`; existing accounts were backfilled to `true`), `password_changed_at` (timestamptz, nullable), `created_at`
 - **games**: `id`, `rawg_id` (unique), `title`, `cover_image_url`, `genres` (jsonb), `platforms` (jsonb), `release_year`, `created_at`
 - **backlog_entries**: `id`, `user_id` (FK → users), `game_id` (FK → games), `status` (enum: `backlog`, `playing`, `completed`, `dropped`, `wishlist`), `rating` (integer 1–10, nullable), `hours_played` (numeric, nullable), `notes` (text, nullable), `created_at`, `updated_at`
 
@@ -114,7 +119,7 @@ The `games` table acts as a local cache of RAWG metadata, populated at the momen
 
 Two supporting tables back the newer features:
 
-- **auth_tokens**: `id`, `user_id` (FK → users, `ON DELETE CASCADE`), `type` (text, e.g. `email_verify`), `token_hash` (SHA-256 hex), `expires_at`, `created_at`. Indexed on `(user_id, type)` and on `token_hash`. The `type` column keeps the table reusable for future single-use token flows such as password reset.
+- **auth_tokens**: `id`, `user_id` (FK → users, `ON DELETE CASCADE`), `type` (text, e.g. `email_verify`, `password_reset`), `token_hash` (SHA-256 hex), `expires_at`, `created_at`. Indexed on `(user_id, type)` and on `token_hash`. The `type` column lets one table back multiple single-use token flows — email verification and password reset — each with its own expiry (24 hours and 1 hour respectively).
 - **game_collections**: `slug` (primary key), `title`, `payload` (jsonb), `refreshed_at`. Caches the curated Discover rows so they can be served without hitting RAWG on every request.
 
 ### Games API (RAWG)
@@ -193,6 +198,7 @@ A single seam: the **Express HTTP API**, tested with Vitest + Supertest against 
 - **Stats route**: correct aggregation (average rating, longest game, recently completed, top-5 by rating) given a known backlog state.
 - **Email verification**: registration returns 201 with no auth cookies and an unverified user; login on an unverified account returns 403 `EMAIL_NOT_VERIFIED`; verifying with a valid token flips `email_verified` and lets login succeed; tokens are single-use and reject expired or invalid values; resend-verification returns an identical generic 200 for unknown, pending, and already-verified emails, issuing a usable token only when pending; email transport is a no-op in `NODE_ENV=test`.
 - **Discovery routes**: discover returns three rows and serves the second call within 24 hours from cache (no extra RAWG fetch), keeping the last-good payload on RAWG failure; browse forwards and whitelists filters and paginates; genres and platforms return cached reference lists; all discovery routes return 401 unauthenticated.
+- **Password reset**: forgot-password returns an identical generic 200 for unknown and existing emails (issuing a usable token only when the account exists); reset-password updates the password (old fails, new works), sets `email_verified = true`, is single-use, and rejects invalid or expired tokens and passwords shorter than 8 characters; resetting revokes existing sessions (a refresh token captured before the reset is rejected afterward, while a fresh login refreshes normally).
 
 ### Prior art
 

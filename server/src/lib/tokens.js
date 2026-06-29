@@ -14,9 +14,11 @@ function generateAccessToken(payload) {
 }
 
 function generateRefreshToken(payload) {
-  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
-  });
+  return jwt.sign(
+    { ...payload, issuedAtMs: Date.now() },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN },
+  );
 }
 
 function verifyAccessToken(token) {

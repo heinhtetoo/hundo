@@ -9,6 +9,10 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import BacklogPage from './pages/BacklogPage.jsx';
 import GameDetailPage from './pages/GameDetailPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import DiscoverPage from './pages/DiscoverPage.jsx';
+import VerifyEmailPage from './pages/VerifyEmailPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 
 const queryClient = new QueryClient();
 
@@ -24,6 +28,9 @@ export default function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route
                   path="/backlog"
                   element={<ProtectedRoute><BacklogPage /></ProtectedRoute>}
@@ -35,6 +42,10 @@ export default function App() {
                 <Route
                   path="/dashboard"
                   element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
+                />
+                <Route
+                  path="/discover"
+                  element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>}
                 />
               </Routes>
             </main>

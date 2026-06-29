@@ -12,12 +12,14 @@ const {
   clearTokenCookies,
 } = require('../lib/tokens');
 const { issueToken, consumeToken } = require('../lib/authTokens');
-const { sendVerificationEmail } = require('../lib/email');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../lib/email');
 const {
   registerSchema,
   loginSchema,
   verifyEmailSchema,
   resendSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } = require('../validation/authSchemas');
 
 const router = Router();
@@ -175,7 +177,7 @@ router.post('/refresh', async (req, res, next) => {
     const payload = verifyRefreshToken(token);
 
     const result = await pool.query(
-      'SELECT id, email FROM users WHERE id = $1',
+      'SELECT id, email, password_changed_at FROM users WHERE id = $1',
       [payload.userId],
     );
     const user = result.rows[0];
@@ -183,6 +185,16 @@ router.post('/refresh', async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         error: { message: 'User not found', code: 'UNAUTHORIZED' },
+      });
+    }
+
+    const tokenIssuedAt = payload.issuedAtMs ?? payload.iat * 1000;
+    if (
+      user.password_changed_at &&
+      tokenIssuedAt < user.password_changed_at.getTime()
+    ) {
+      return res.status(401).json({
+        error: { message: 'Session revoked', code: 'UNAUTHORIZED' },
       });
     }
 
@@ -204,6 +216,67 @@ router.post('/refresh', async (req, res, next) => {
 router.post('/logout', (req, res) => {
   clearTokenCookies(res);
   res.json({ message: 'Logged out' });
+});
+
+router.post('/forgot-password', createAuthRateLimiter(), async (req, res, next) => {
+  try {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: { message: 'Invalid input', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const result = await pool.query(
+      'SELECT id, email FROM users WHERE email = $1',
+      [parsed.data.email],
+    );
+    const user = result.rows[0];
+
+    let resetToken;
+    if (user) {
+      const raw = await issueToken(user.id, 'password_reset');
+      const link = `${process.env.CLIENT_URL}/reset-password?token=${raw}`;
+      await sendPasswordResetEmail(user.email, link);
+      resetToken = raw;
+    }
+
+    const body = { message: 'If that email address has an account, we have sent a reset link.' };
+    if (process.env.NODE_ENV === 'test' && resetToken) body._resetToken = resetToken;
+    res.json(body);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/reset-password', createAuthRateLimiter(), async (req, res, next) => {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: { message: 'Invalid input', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const userId = await consumeToken(parsed.data.token, 'password_reset');
+    if (!userId) {
+      return res.status(400).json({
+        error: { message: 'Reset link is invalid or has expired.', code: 'INVALID_TOKEN' },
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+    await pool.query(
+      `UPDATE users
+       SET password_hash = $1, password_changed_at = now(), email_verified = true
+       WHERE id = $2`,
+      [passwordHash, userId],
+    );
+
+    res.json({ message: 'Password reset successful. You can now log in.' });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.get('/me', async (req, res, next) => {

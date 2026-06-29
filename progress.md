@@ -189,3 +189,82 @@
 - [x] Manual (email transport = console): register → "check your inbox", grab logged link, login blocked (403) until button-click verify, then login succeeds; resend generic; expired token handled
 - [x] Manual: `/discover` rows instant + cache-served on reload; genre/platform/year/sort filters → grid + "Load more"; card click → detail → add to backlog
 - [x] Sync PRD.md: add stories + implementation notes for both features (`auth_tokens`/verification flow; discover endpoints + `game_collections` cache)
+
+## Phase 16 — Forgot Password / Password Reset
+
+Emailed-link reset flow that reuses the Phase 15 infrastructure (`auth_tokens`,
+`issueToken`/`consumeToken`, pluggable email sender, per-route rate limiters,
+`VerifyEmailPage` as UI template). New piece: session revocation on reset.
+
+### Locked decisions (from grilling)
+- Revoke existing sessions on reset via `users.password_changed_at` + an
+  `issuedAtMs` claim embedded in new refresh JWTs (ms-precision; falls back to
+  `iat*1000` for pre-existing tokens). Other sessions die within ≤15 min. Access
+  tokens are not checked mid-life — the 15-min window is accepted.
+- Reset-token expiry is 1 hour (verification stays 24h).
+- Reset works regardless of verified status; a successful reset also sets
+  `email_verified = true`.
+- Redirect to `/login` after reset (no auto-login).
+- Request endpoint is enumeration-safe (always generic 200; sends only when the
+  account exists).
+
+### B1. Database
+- [x] Migration: add `password_changed_at timestamptz` (nullable) to `users`. No
+  backfill — `NULL` means "never changed", so the refresh `iat` check is skipped
+  for existing sessions. No change to `auth_tokens` (its `type` column already
+  supports `password_reset`).
+
+### B2. Backend — token + email libs
+- [x] `server/src/lib/authTokens.js`: parameterise expiry per token type — replace
+  the single `EXPIRY_MS` with a per-type map (`email_verify` 24h, `password_reset`
+  1h, default 24h); `issueToken` looks up expiry by `type`. `consumeToken`
+  unchanged (already type-aware)
+- [x] `server/src/lib/email.js`: add `sendPasswordResetEmail(to, link)` mirroring
+  `sendVerificationEmail`; reuse the existing `sendEmail` transport unchanged
+- [x] `server/src/validation/authSchemas.js`: add `forgotPasswordSchema`
+  (`{ email }`) and `resetPasswordSchema` (`{ token, password: min(8) }`)
+
+### B3. Backend — auth routes (`server/src/routes/auth.js`)
+- [x] `POST /forgot-password` (own `createAuthRateLimiter()`): look up user by
+  email; if it exists `issueToken(id, 'password_reset')`, build
+  `${CLIENT_URL}/reset-password?token=<raw>`, `sendPasswordResetEmail`; ALWAYS
+  return generic `200`; in `NODE_ENV=test` expose `_resetToken` only when issued
+- [x] `POST /reset-password` (own `createAuthRateLimiter()`): validate;
+  `consumeToken(token, 'password_reset')`; `null` → `400 INVALID_TOKEN`; else
+  `bcrypt.hash` and one `UPDATE` setting `password_hash`,
+  `password_changed_at = now()`, `email_verified = true`; success message, no
+  cookies
+- [x] `POST /refresh`: select `password_changed_at`; compare via ms-precision
+  `issuedAtMs` claim embedded in the refresh JWT (falls back to `iat*1000` for
+  old tokens); revoke if token predates password change
+
+### B4. Frontend
+- [x] `client/src/context/AuthContext.jsx`: add `requestPasswordReset(email)` and
+  `resetPassword(token, password)` helpers (thin `apiFetch` wrappers, like
+  `resendVerification`); expose both
+- [x] `client/src/pages/ForgotPasswordPage.jsx` (new) + public `/forgot-password`
+  route in `App.jsx`: email input → generic "check your inbox" confirmation
+- [x] `client/src/pages/ResetPasswordPage.jsx` (new) + public `/reset-password`
+  route: read `?token=`, new-password + confirm-password fields (client-side match
+  check), submit → success state linking to `/login`; invalid/expired token (only
+  surfaces on submit) → error state linking to `/forgot-password`
+- [x] `client/src/pages/LoginPage.jsx`: add a "Forgot password?" link
+
+### B5. Tests (`server/test/auth.test.js`)
+- [x] forgot-password returns identical generic 200 for unknown vs existing;
+  issues a usable token only for an existing account (`_resetToken` present)
+- [x] reset-password: old password stops working, new password logs in;
+  `email_verified` flips true; token single-use; expired/invalid → 400; password
+  < 8 chars → 400 validation
+- [x] session revocation: a refresh cookie captured before the reset yields 401
+  from `/refresh` afterwards; a fresh login refreshes fine
+
+### Verify
+- [x] `cd server && npm test` — 96 tests pass (86 prior + 10 new reset/revocation)
+- [x] `cd client && npm run build` — no errors
+- [x] Manual (email = console): two logged-in "devices"; request reset from a
+  third; use logged link to set new password; redirect to login; old password
+  fails, new works; open sessions bounced within ~15 min / on next refresh;
+  expired/invalid token handled; unknown email still says "check your inbox"
+- [x] Sync PRD.md: password-reset stories + notes (`password_changed_at` +
+  `issuedAtMs` revocation, per-type token expiry, reset-also-verifies)

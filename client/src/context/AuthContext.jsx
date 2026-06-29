@@ -44,7 +44,9 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error?.message ?? 'Login failed');
+      const err = new Error(data.error?.message ?? 'Login failed');
+      err.code = data.error?.code;
+      throw err;
     }
     setUser(data.user);
     return data.user;
@@ -60,8 +62,36 @@ export function AuthProvider({ children }) {
     if (!res.ok) {
       throw new Error(data.error?.message ?? 'Registration failed');
     }
-    setUser(data.user);
-    return data.user;
+  }
+
+  async function resendVerification(email) {
+    await apiFetch('/api/v1/auth/resend-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async function requestPasswordReset(email) {
+    await apiFetch('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async function resetPassword(token, password) {
+    const res = await apiFetch('/api/v1/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.error?.message ?? 'Reset failed');
+      err.code = data.error?.code;
+      throw err;
+    }
   }
 
   async function logout() {
@@ -72,7 +102,17 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        register,
+        logout,
+        resendVerification,
+        requestPasswordReset,
+        resetPassword,
+      }}
     >
       {children}
     </AuthContext.Provider>
