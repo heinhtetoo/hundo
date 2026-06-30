@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface text-content font-sans antialiased;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: oklch(30% 0.01 265);
+  }
+
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    border-color: oklch(76% 0.19 55);
+    box-shadow: 0 0 0 3px oklch(76% 0.19 55 / 0.18);
+  }
+}
+
+@layer utilities {
+  .dot-grid {
+    background-image: radial-gradient(
+      circle,
+      oklch(100% 0 0 / 0.045) 1px,
+      transparent 1px
+    );
+    background-size: 28px 28px;
+  }
+
+  .glow {
+    background: radial-gradient(
+      circle,
+      var(--glow-color, oklch(62% 0.24 280 / 0.13)) 0%,
+      transparent 62%
+    );
+    pointer-events: none;
+  }
+}
