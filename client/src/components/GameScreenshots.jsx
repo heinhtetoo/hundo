@@ -21,15 +21,17 @@ export default function GameScreenshots({ rawgId }) {
 
   return (
     <div>
-      <h2 className="font-semibold mb-3 text-gray-200">Screenshots</h2>
-      <div className="grid grid-cols-2 gap-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-content-subtle mb-3">
+        Screenshots
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {screenshots.map(shot => (
           <img
             key={shot.id}
             src={shot.image}
             alt=""
             loading="lazy"
-            className="w-full h-40 object-cover rounded-lg"
+            className="w-full aspect-video object-cover rounded-lg"
           />
         ))}
       </div>

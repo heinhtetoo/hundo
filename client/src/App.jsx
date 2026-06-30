@@ -9,7 +9,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import BacklogPage from './pages/BacklogPage.jsx';
 import GameDetailPage from './pages/GameDetailPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 import DiscoverPage from './pages/DiscoverPage.jsx';
 import VerifyEmailPage from './pages/VerifyEmailPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
@@ -53,7 +53,7 @@ export default function App() {
                 path="/profile"
                 element={
                   <ProtectedRoute>
-                    <DashboardPage />
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />

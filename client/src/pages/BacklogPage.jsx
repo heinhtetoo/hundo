@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api.js';
+import GameCard from '../components/GameCard.jsx';
+import CompletionRing from '../components/ui/CompletionRing.jsx';
+import Input from '../components/ui/Input.jsx';
 
 const STATUSES = ['backlog', 'playing', 'completed', 'dropped', 'wishlist'];
 const SORT_OPTIONS = [
@@ -10,53 +12,6 @@ const SORT_OPTIONS = [
   { value: 'rating', label: 'Rating' },
   { value: 'hours_played', label: 'Hours' },
 ];
-const STATUS_COLOURS = {
-  backlog: 'bg-gray-600',
-  playing: 'bg-blue-600',
-  completed: 'bg-green-600',
-  dropped: 'bg-red-600',
-  wishlist: 'bg-purple-600',
-};
-
-function GameCard({ entry }) {
-  return (
-    <Link
-      to={`/games/${entry.rawg_id}`}
-      className="bg-gray-800 rounded-xl overflow-hidden hover:ring-2
-                 hover:ring-indigo-500 transition-all block"
-    >
-      {entry.cover_image_url ? (
-        <img
-          src={entry.cover_image_url}
-          alt={entry.title}
-          className="w-full h-36 object-cover"
-        />
-      ) : (
-        <div className="w-full h-36 bg-gray-700 flex items-center justify-center">
-          <span className="text-gray-500 text-xs">No image</span>
-        </div>
-      )}
-      <div className="p-3">
-        <h3 className="font-medium text-white text-sm mb-2 line-clamp-1">
-          {entry.title}
-        </h3>
-        <div className="flex items-center justify-between">
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full text-white capitalize
-                        ${STATUS_COLOURS[entry.status]}`}
-          >
-            {entry.status}
-          </span>
-          <span className="text-xs text-gray-400">
-            {entry.rating && `★ ${entry.rating}`}
-            {entry.rating && entry.hours_played && ' · '}
-            {entry.hours_played && `${Number(entry.hours_played)}h`}
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
 
 function useBacklog({ statuses, search, sort, order }) {
   return useQuery({
@@ -73,6 +28,34 @@ function useBacklog({ statuses, search, sort, order }) {
   });
 }
 
+function useStats() {
+  return useQuery({
+    queryKey: ['stats'],
+    queryFn: async () => {
+      const res = await apiFetch('/api/v1/stats');
+      return res.json();
+    },
+  });
+}
+
+function FilterButton({ active, label, count, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        'flex items-center justify-between px-3 py-2 rounded-lg text-sm',
+        'capitalize transition-colors text-left',
+        active
+          ? 'bg-[oklch(76%_0.19_55_/_0.12)] text-brand font-semibold'
+          : 'text-content-muted hover:text-content hover:bg-surface-card',
+      ].join(' ')}
+    >
+      <span>{label}</span>
+      <span className="text-xs text-content-subtle">{count}</span>
+    </button>
+  );
+}
+
 export default function BacklogPage() {
   const [statuses, setStatuses] = useState([]);
   const [search, setSearch] = useState('');
@@ -82,87 +65,126 @@ export default function BacklogPage() {
   const { data, isLoading } = useBacklog({ statuses, search, sort, order });
   const entries = data?.entries ?? [];
 
+  const { data: statsData } = useStats();
+  const counts = statsData?.stats?.statusCounts ?? {};
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const completionRate = statsData?.stats?.completionRate ?? 0;
+
   function toggleStatus(s) {
-    setStatuses(prev =>
-      prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+    setStatuses((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
     );
   }
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">My Backlog</h1>
+  const selectCls =
+    'bg-surface-input text-content rounded-lg border border-edge px-3 py-2 ' +
+    'text-sm outline-none cursor-pointer';
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex gap-1 bg-gray-800 p-1 rounded-lg">
+  return (
+    <div className="flex">
+      <aside
+        className="hidden lg:flex w-64 shrink-0 flex-col gap-7 p-6
+                   border-r border-edge-subtle bg-surface-raised
+                   min-h-[calc(100vh-64px)]"
+      >
+        <CompletionRing
+          percent={completionRate}
+          size={120}
+          sublabel="complete"
+          innerClassName="bg-surface-raised"
+          className="mx-auto"
+        />
+        <nav className="flex flex-col gap-1">
+          <FilterButton
+            active={statuses.length === 0}
+            label="All"
+            count={total}
+            onClick={() => setStatuses([])}
+          />
+          {STATUSES.map((s) => (
+            <FilterButton
+              key={s}
+              active={statuses.includes(s)}
+              label={s}
+              count={counts[s] ?? 0}
+              onClick={() => toggleStatus(s)}
+            />
+          ))}
+        </nav>
+      </aside>
+
+      <div className="flex-1 min-w-0 px-4 md:px-8 py-6">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <h1 className="text-2xl font-bold mr-auto">My Backlog</h1>
+          <Input
+            type="text"
+            placeholder="Search titles…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-auto py-2"
+          />
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className={selectCls}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+            className={`${selectCls} text-content-muted hover:text-content`}
+            title={order === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {order === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
+
+        <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-5">
           <button
             onClick={() => setStatuses([])}
-            className={`px-3 py-1.5 rounded-md text-sm capitalize transition-colors
-              ${statuses.length === 0
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-400 hover:text-white'}`}
+            className={[
+              'shrink-0 px-4 py-1.5 rounded-full text-xs font-medium capitalize',
+              statuses.length === 0
+                ? 'bg-brand text-brand-ink'
+                : 'bg-surface-card text-content-muted',
+            ].join(' ')}
           >
             All
           </button>
-          {STATUSES.map(s => (
+          {STATUSES.map((s) => (
             <button
               key={s}
               onClick={() => toggleStatus(s)}
-              className={`px-3 py-1.5 rounded-md text-sm capitalize transition-colors
-                ${statuses.includes(s)
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-white'}`}
+              className={[
+                'shrink-0 px-4 py-1.5 rounded-full text-xs font-medium capitalize',
+                statuses.includes(s)
+                  ? 'bg-brand text-brand-ink'
+                  : 'bg-surface-card text-content-muted',
+              ].join(' ')}
             >
               {s}
             </button>
           ))}
         </div>
 
-        <input
-          type="text"
-          placeholder="Search titles…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="bg-gray-800 text-white placeholder-gray-500 rounded-lg
-                     px-4 py-2 text-sm outline-none focus:ring-2
-                     focus:ring-indigo-500"
-        />
-
-        <div className="flex items-center gap-1">
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
-                       outline-none cursor-pointer"
-          >
-            {SORT_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+        {isLoading ? (
+          <p className="text-content-muted">Loading…</p>
+        ) : entries.length === 0 ? (
+          <p className="text-content-muted">
+            No games found. Search for a game in the navbar to add it.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+            {entries.map((entry) => (
+              <GameCard key={entry.id} entry={entry} />
             ))}
-          </select>
-          <button
-            onClick={() => setOrder(o => o === 'asc' ? 'desc' : 'asc')}
-            className="bg-gray-800 text-gray-400 hover:text-white rounded-lg
-                       px-3 py-2 text-sm transition-colors"
-            title={order === 'asc' ? 'Ascending' : 'Descending'}
-          >
-            {order === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-
-      {isLoading ? (
-        <p className="text-gray-400">Loading…</p>
-      ) : entries.length === 0 ? (
-        <p className="text-gray-400">
-          No games found. Search for a game in the navbar to add it.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
-                        gap-4">
-          {entries.map(entry => (
-            <GameCard key={entry.id} entry={entry} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

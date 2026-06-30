@@ -359,21 +359,21 @@ changes; server tests stay green.
 - [x] Restyle global toasts (react-hot-toast) to the dark/amber theme
 
 ### P4. Core app screens
-- [ ] `BacklogPage.jsx` (design 05): left **sidebar** (`CompletionRing` + status
+- [x] `BacklogPage.jsx` (design 05): left **sidebar** (`CompletionRing` + status
   filter list with counts) + main responsive grid; keep multi-status filter / sort
   / search behaviour, restyle controls. Mobile = filters become a horizontal pill
   row, single/two-col grid, tab bar
-- [ ] `GameCard.jsx`: redesign cover-forward (real RAWG art, gradient fallback) with
+- [x] `GameCard.jsx`: redesign cover-forward (real RAWG art, gradient fallback) with
   completion/status badge + rating + hours; variants for backlog vs discover
-- [ ] `GameDetailPage.jsx` (06): cinematic **hero** (RAWG cover bg + noise-grain SVG
+- [x] `GameDetailPage.jsx` (06): cinematic **hero** (RAWG cover bg + noise-grain SVG
   + bottom fade + breadcrumb + title + tag/Metacritic/RAWG badges) over two-col
   body — left About / Details grid / Screenshots; right "Your Entry" `Card`
   (segmented status control, `RatingBar`, hours, notes). Rebuild
   `BacklogEntryForm.jsx` on the new primitives. Mobile = hero + stacked single col
-- [ ] `DiscoverPage.jsx` (10): header ("Discover" + count) + scrollable **category
+- [x] `DiscoverPage.jsx` (10): header ("Discover" + count) + scrollable **category
   pills** + responsive grid + search; keep data + infinite-scroll behaviour, retire
   carousel-row layout to match design. Mobile = pills + single/two-col grid
-- [ ] `ProfilePage.jsx` (rename from `DashboardPage.jsx`, design 04): hero (avatar =
+- [x] `ProfilePage.jsx` (rename from `DashboardPage.jsx`, design 04): hero (avatar =
   email initials + completion arc + identity + stat tiles: games / hours / avg
   rating / top genre) + completion donut with Done/Playing/Backlog counts +
   **Library** section (filter pills + game grid). Reuse existing stat computations;

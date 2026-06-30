@@ -2,32 +2,25 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import StarRating from './StarRating.jsx';
+import Field from './ui/Field.jsx';
+import Input from './ui/Input.jsx';
+import Button from './ui/Button.jsx';
+import RatingBar from './ui/RatingBar.jsx';
 
 const STATUSES = ['backlog', 'playing', 'completed', 'dropped', 'wishlist'];
 
 const entrySchema = z.object({
   status: z.enum(STATUSES),
   rating: z.preprocess(
-    v => (v === '' ? null : Number(v)),
+    (v) => (v === '' ? null : Number(v)),
     z.number().int().min(1).max(10).nullable(),
   ),
   hoursPlayed: z.preprocess(
-    v => (v === '' ? null : Number(v)),
+    (v) => (v === '' ? null : Number(v)),
     z.number().min(0).nullable(),
   ),
   notes: z.string().max(2000),
 });
-
-function Field({ label, error, children }) {
-  return (
-    <div>
-      <label className="block text-sm text-gray-400 mb-1.5">{label}</label>
-      {children}
-      {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
-    </div>
-  );
-}
 
 export default function BacklogEntryForm({ entry, onSave, onRemove }) {
   const [confirming, setConfirming] = useState(false);
@@ -59,34 +52,46 @@ export default function BacklogEntryForm({ entry, onSave, onRemove }) {
     }
   }, [entry, reset]);
 
-  const inputCls = `w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white
-                    outline-none focus:ring-2 focus:ring-indigo-500`;
+  const status = watch('status');
 
   return (
-    <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-      <Field label="Status" error={errors.status?.message}>
-        <select {...register('status')} className={inputCls}>
-          {STATUSES.map(s => (
-            <option key={s} value={s} className="capitalize">{s}</option>
-          ))}
-        </select>
+    <form onSubmit={handleSubmit(onSave)} className="space-y-5">
+      <Field label="Status">
+        <div className="grid grid-cols-2 gap-1.5">
+          {STATUSES.map((s) => {
+            const selected = status === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setValue('status', s, { shouldValidate: true })}
+                className={[
+                  'px-2 py-2 rounded-lg text-xs font-medium capitalize border transition-colors',
+                  selected
+                    ? 'border-[oklch(76%_0.19_55_/_0.35)] bg-[oklch(76%_0.19_55_/_0.12)] text-brand'
+                    : 'border-edge bg-surface-input text-content-muted hover:text-content',
+                ].join(' ')}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
       </Field>
 
-      <Field label="Rating" error={errors.rating?.message}>
-        <StarRating
-          value={watch('rating')}
-          onChange={n => setValue('rating', n, { shouldValidate: true })}
-        />
-      </Field>
+      <RatingBar
+        label="Rating"
+        value={watch('rating')}
+        onChange={(n) => setValue('rating', n, { shouldValidate: true })}
+      />
 
       <Field label="Hours played" error={errors.hoursPlayed?.message}>
-        <input
+        <Input
           {...register('hoursPlayed')}
           type="number"
           min="0"
           step="0.5"
           placeholder="—"
-          className={inputCls}
         />
       </Field>
 
@@ -95,49 +100,52 @@ export default function BacklogEntryForm({ entry, onSave, onRemove }) {
           {...register('notes')}
           rows={3}
           placeholder="Your thoughts…"
-          className={`${inputCls} resize-none`}
+          className="w-full box-border px-4 py-3 rounded-lg bg-surface-input
+                     text-content border border-edge transition-colors resize-none"
         />
-        <p className="text-xs text-gray-500 text-right mt-1">
+        <p className="text-xs text-content-subtle text-right mt-1">
           {(watch('notes') ?? '').length}/2000
         </p>
       </Field>
 
       {confirming ? (
         <div className="flex items-center gap-3 pt-1">
-          <span className="text-sm text-gray-400 flex-1">Remove this entry?</span>
+          <span className="text-sm text-content-muted flex-1">
+            Remove this entry?
+          </span>
           <button
             type="button"
-            onClick={() => { onRemove(); setConfirming(false); }}
-            className="px-4 py-2.5 bg-red-700 hover:bg-red-600 text-white
-                       rounded-lg transition-colors text-sm"
+            onClick={() => {
+              onRemove();
+              setConfirming(false);
+            }}
+            className="px-4 py-2.5 rounded-lg text-sm text-white
+                       bg-[oklch(45%_0.18_18)] hover:bg-[oklch(52%_0.18_18)]
+                       transition-colors"
           >
             Yes, remove
           </button>
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300
-                       rounded-lg transition-colors text-sm"
+            className="px-4 py-2.5 rounded-lg text-sm text-content-muted
+                       bg-surface-input hover:text-content transition-colors"
           >
             Cancel
           </button>
         </div>
       ) : (
         <div className="flex gap-3 pt-1">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                       text-white font-medium py-2.5 rounded-lg transition-colors"
-          >
+          <Button type="submit" disabled={isSubmitting} className="flex-1">
             {entry ? 'Save changes' : 'Add to backlog'}
-          </button>
+          </Button>
           {entry && (
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="px-4 py-2.5 bg-gray-700 hover:bg-red-800 text-gray-300
-                         hover:text-white rounded-lg transition-colors text-sm"
+              className="px-4 py-2.5 rounded-lg text-sm text-content-muted
+                         bg-surface-input hover:text-white
+                         hover:bg-[oklch(40%_0.16_18)] transition-colors"
             >
               Remove
             </button>
