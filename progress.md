@@ -344,19 +344,19 @@ changes; server tests stay green.
 - [x] Update any `/dashboard` links/redirects across the client to `/profile`
 
 ### P3. Public / auth screens (re-skin + split-panel restructure)
-- [ ] `LandingPage.jsx` (design 01): hero copy "Your backlog, actually managed.",
+- [x] `LandingPage.jsx` (design 01): hero copy "Your backlog, actually managed.",
   dual CTAs (amber "Get started" + outline "Sign in"), floating game-cover cards
   visual (`floatA/B/C` + `glowPulse`), dot-grid + side glows; mobile = stacked
-- [ ] `RegisterPage.jsx` (02) + `LoginPage.jsx` (03): split layout — left brand
+- [x] `RegisterPage.jsx` (02) + `LoginPage.jsx` (03): split layout — left brand
   panel (completion-ring "H", "Built for completionists.", game-spine strip) +
   right form panel on the new primitives. Preserve Login's "Forgot password?" +
   `EMAIL_NOT_VERIFIED` states and Register's pending/resend state. Mobile = form
   only, brand condensed to top
-- [ ] `VerifyEmailPage.jsx` (08/09/11) + "Check your inbox" (07) on RegisterPage +
+- [x] `VerifyEmailPage.jsx` (08/09/11) + "Check your inbox" (07) on RegisterPage +
   `ForgotPasswordPage.jsx` (12) + `ResetPasswordPage.jsx` + "Reset link sent" (13):
   centered branded status cards (ring/icon + heading + copy + CTA). Keep existing
   button-click-to-verify + token-on-submit behaviour
-- [ ] Restyle global toasts (react-hot-toast) to the dark/amber theme
+- [x] Restyle global toasts (react-hot-toast) to the dark/amber theme
 
 ### P4. Core app screens
 - [ ] `BacklogPage.jsx` (design 05): left **sidebar** (`CompletionRing` + status

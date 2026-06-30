@@ -16,15 +16,17 @@ const SIZES = {
 };
 
 export default function Button({
+  as: Tag = 'button',
   variant = 'primary',
   size = 'md',
-  type = 'button',
+  type,
   className = '',
   ...props
 }) {
+  const typeProp = Tag === 'button' ? { type: type ?? 'button' } : {};
   return (
-    <button
-      type={type}
+    <Tag
+      {...typeProp}
       className={[
         'inline-flex items-center justify-center gap-2 font-semibold',
         'cursor-pointer transition-all',
@@ -39,3 +41,4 @@ export default function Button({
     />
   );
 }
+
