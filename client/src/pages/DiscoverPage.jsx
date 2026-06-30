@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import GameCard from '../components/GameCard.jsx';
+import Button from '../components/ui/Button.jsx';
 import { apiFetch } from '../lib/api.js';
 
 const SORT_OPTIONS = [
@@ -9,17 +10,6 @@ const SORT_OPTIONS = [
   { value: 'name', label: 'Name' },
   { value: 'added', label: 'Popularity' },
 ];
-
-function useDiscoverRows() {
-  return useQuery({
-    queryKey: ['discover'],
-    queryFn: async () => {
-      const res = await apiFetch('/api/v1/games/discover');
-      return res.json();
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-}
 
 function useGenres() {
   return useQuery({
@@ -60,21 +50,6 @@ function useBrowse({ genre, platform, year, sort, order }) {
   });
 }
 
-function CarouselRow({ title, games }) {
-  return (
-    <section className="mb-10">
-      <h2 className="text-lg font-semibold mb-3">{title}</h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {games.map(game => (
-          <div key={game.id} className="flex-none w-36">
-            <GameCard game={game} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function DiscoverPage() {
   const [genre, setGenre] = useState('');
   const [platform, setPlatform] = useState('');
@@ -82,9 +57,6 @@ export default function DiscoverPage() {
   const [sort, setSort] = useState('rating');
   const [order, setOrder] = useState('desc');
 
-  const hasFilter = genre || platform || year;
-
-  const { data: discoverData, isLoading: rowsLoading } = useDiscoverRows();
   const { data: genresData } = useGenres();
   const { data: platformsData } = usePlatforms();
   const {
@@ -92,125 +64,118 @@ export default function DiscoverPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading: browseLoading,
+    isLoading,
   } = useBrowse({ genre, platform, year, sort, order });
 
-  const browseGames = hasFilter
-    ? browseData?.pages.flatMap(p => p.results) ?? []
-    : [];
+  const games = browseData?.pages.flatMap((p) => p.results) ?? [];
+  const genres = genresData?.genres ?? [];
 
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 30 }, (_, i) => currentYear - i);
 
+  const selectCls =
+    'bg-surface-input text-content rounded-lg border border-edge px-3 py-2 ' +
+    'text-sm outline-none cursor-pointer';
+
+  function pillCls(active) {
+    return [
+      'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors',
+      active
+        ? 'bg-brand text-brand-ink'
+        : 'bg-surface-card text-content-muted hover:text-content',
+    ].join(' ');
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Discover Games</h1>
-
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <select
-          value={genre}
-          onChange={e => setGenre(e.target.value)}
-          className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
-                     outline-none cursor-pointer"
-        >
-          <option value="">All genres</option>
-          {(genresData?.genres ?? []).map(g => (
-            <option key={g.id} value={g.slug}>{g.name}</option>
-          ))}
-        </select>
-
-        <select
-          value={platform}
-          onChange={e => setPlatform(e.target.value)}
-          className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
-                     outline-none cursor-pointer"
-        >
-          <option value="">All platforms</option>
-          {(platformsData?.platforms ?? []).map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-
-        <select
-          value={year}
-          onChange={e => setYear(e.target.value)}
-          className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
-                     outline-none cursor-pointer"
-        >
-          <option value="">All years</option>
-          {yearOptions.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-
-        <div className="flex items-center gap-1">
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            className="bg-gray-800 text-white rounded-lg px-3 py-2 text-sm
-                       outline-none cursor-pointer"
-          >
-            {SORT_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <button
-            onClick={() => setOrder(o => o === 'asc' ? 'desc' : 'asc')}
-            className="bg-gray-800 text-gray-400 hover:text-white rounded-lg
-                       px-3 py-2 text-sm transition-colors"
-            title={order === 'asc' ? 'Ascending' : 'Descending'}
-          >
-            {order === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
-
-        {hasFilter && (
-          <button
-            onClick={() => { setGenre(''); setPlatform(''); setYear(''); }}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            Clear filters
-          </button>
-        )}
+    <div className="px-4 md:px-8 lg:px-20 py-6">
+      <div className="flex items-baseline gap-3 mb-4">
+        <h1 className="text-3xl font-bold tracking-tight">Discover</h1>
+        <span className="text-sm text-content-subtle">Find your next game</span>
       </div>
 
-      {hasFilter ? (
-        <div>
-          {browseLoading ? (
-            <p className="text-gray-400">Loading…</p>
-          ) : browseGames.length === 0 ? (
-            <p className="text-gray-400">No games found for these filters.</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4
-                              xl:grid-cols-5 gap-4 mb-6">
-                {browseGames.map(game => (
-                  <GameCard key={game.id} game={game} />
-                ))}
-              </div>
-              {hasNextPage && (
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                    className="bg-gray-800 hover:bg-gray-700 disabled:opacity-50
-                               text-white px-6 py-2 rounded-lg text-sm transition-colors"
-                  >
-                    {isFetchingNextPage ? 'Loading…' : 'Load more'}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+        <button onClick={() => setGenre('')} className={pillCls(!genre)}>
+          All
+        </button>
+        {genres.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => setGenre(g.slug)}
+            className={pillCls(genre === g.slug)}
+          >
+            {g.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-8">
+        <select
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          className={selectCls}
+        >
+          <option value="">All platforms</option>
+          {(platformsData?.platforms ?? []).map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className={selectCls}
+        >
+          <option value="">All years</option>
+          {yearOptions.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className={selectCls}
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+          className={`${selectCls} text-content-muted hover:text-content`}
+          title={order === 'asc' ? 'Ascending' : 'Descending'}
+        >
+          {order === 'asc' ? '↑' : '↓'}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <p className="text-content-muted">Loading…</p>
+      ) : games.length === 0 ? (
+        <p className="text-content-muted">No games found for these filters.</p>
       ) : (
-        rowsLoading ? (
-          <p className="text-gray-400">Loading…</p>
-        ) : (
-          (discoverData?.rows ?? []).map(row => (
-            <CarouselRow key={row.slug} title={row.title} games={row.games} />
-          ))
-        )
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
+            {games.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
+          </div>
+          {hasNextPage && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? 'Loading…' : 'Load more'}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

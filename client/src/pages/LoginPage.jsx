@@ -6,6 +6,10 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiFetch } from '../lib/api.js';
+import AuthBrandPanel from '../components/auth/AuthBrandPanel.jsx';
+import Field from '../components/ui/Field.jsx';
+import Input from '../components/ui/Input.jsx';
+import Button from '../components/ui/Button.jsx';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,7 +25,6 @@ export default function LoginPage() {
     register,
     handleSubmit,
     setError,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema) });
 
@@ -56,78 +59,91 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-12">
-      <h1 className="text-3xl font-bold mb-8">Sign in</h1>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1.5">Email</label>
-          <input
-            {...register('email')}
-            type="email"
-            autoComplete="email"
-            className="w-full bg-gray-800 rounded-lg px-4 py-2.5 text-white
-                       outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          {errors.email && (
-            <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
-          )}
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm text-gray-400">Password</label>
+    <div className="flex-1 flex">
+      <AuthBrandPanel />
+      <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
+        <div className="absolute inset-0 dot-grid pointer-events-none" />
+        <div className="relative z-10 w-full max-w-md">
+          <h1 className="text-3xl md:text-[38px] font-bold tracking-tight mb-2">
+            Welcome back.
+          </h1>
+          <p className="text-content-muted mb-10">
+            Sign in to continue your journey.
+          </p>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="space-y-5"
+          >
+            <Field label="Email" error={errors.email?.message}>
+              <Input
+                {...register('email')}
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+            </Field>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[13px] font-medium text-content-muted">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-accent hover:text-accent-hover"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
+                {...register('password')}
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-400">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {errors.root && (
+              <p className="text-red-400 text-sm">{errors.root.message}</p>
+            )}
+
+            {unverifiedEmail && (
+              <div className="rounded-lg border border-[oklch(76%_0.19_55_/_0.35)] bg-[oklch(76%_0.19_55_/_0.1)] p-3 text-sm">
+                <p className="text-brand mb-2">
+                  Please verify your email before signing in.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="text-accent hover:text-accent-hover disabled:opacity-50"
+                >
+                  {resending ? 'Resending…' : 'Resend verification email'}
+                </button>
+              </div>
+            )}
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+          <p className="text-content-subtle text-sm mt-6 text-center">
+            Don&apos;t have an account?{' '}
             <Link
-              to="/forgot-password"
-              className="text-xs text-indigo-400 hover:text-indigo-300"
+              to="/register"
+              className="text-accent hover:text-accent-hover font-medium"
             >
-              Forgot password?
+              Register
             </Link>
-          </div>
-          <input
-            {...register('password')}
-            type="password"
-            autoComplete="current-password"
-            className="w-full bg-gray-800 rounded-lg px-4 py-2.5 text-white
-                       outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          {errors.password && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
+          </p>
         </div>
-        {errors.root && (
-          <p className="text-red-400 text-sm">{errors.root.message}</p>
-        )}
-        {unverifiedEmail && (
-          <div className="bg-yellow-900/40 border border-yellow-700 rounded-lg p-3 text-sm">
-            <p className="text-yellow-300 mb-2">
-              Please verify your email before signing in.
-            </p>
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={resending}
-              className="text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
-            >
-              {resending ? 'Resending…' : 'Resend verification email'}
-            </button>
-          </div>
-        )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                     text-white font-medium py-2.5 rounded-lg transition-colors"
-        >
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-      <p className="text-gray-400 text-sm mt-6 text-center">
-        Don&apos;t have an account?{' '}
-        <Link to="/register" className="text-indigo-400 hover:text-indigo-300">
-          Register
-        </Link>
-      </p>
+      </div>
     </div>
   );
 }

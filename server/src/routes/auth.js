@@ -73,7 +73,7 @@ router.post('/login', createAuthRateLimiter(), async (req, res, next) => {
     const { email, password } = parsed.data;
 
     const result = await pool.query(
-      'SELECT id, email, password_hash, email_verified FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, email_verified, created_at FROM users WHERE email = $1',
       [email],
     );
     const user = result.rows[0];
@@ -101,7 +101,9 @@ router.post('/login', createAuthRateLimiter(), async (req, res, next) => {
     const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
     setTokenCookies(res, accessToken, refreshToken);
 
-    res.json({ user: { id: user.id, email: user.email } });
+    res.json({
+      user: { id: user.id, email: user.email, created_at: user.created_at },
+    });
   } catch (err) {
     next(err);
   }
@@ -177,7 +179,7 @@ router.post('/refresh', async (req, res, next) => {
     const payload = verifyRefreshToken(token);
 
     const result = await pool.query(
-      'SELECT id, email, password_changed_at FROM users WHERE id = $1',
+      'SELECT id, email, password_changed_at, created_at FROM users WHERE id = $1',
       [payload.userId],
     );
     const user = result.rows[0];
@@ -202,7 +204,9 @@ router.post('/refresh', async (req, res, next) => {
     const refreshToken = generateRefreshToken({ userId: user.id, email: user.email });
     setTokenCookies(res, accessToken, refreshToken);
 
-    res.json({ user: { id: user.id, email: user.email } });
+    res.json({
+      user: { id: user.id, email: user.email, created_at: user.created_at },
+    });
   } catch (err) {
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
       return res.status(401).json({

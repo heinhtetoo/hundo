@@ -268,3 +268,147 @@ Emailed-link reset flow that reuses the Phase 15 infrastructure (`auth_tokens`,
   expired/invalid token handled; unknown email still says "check your inbox"
 - [x] Sync PRD.md: password-reset stories + notes (`password_changed_at` +
   `issuedAtMs` revocation, per-type token expiry, reset-also-verifies)
+
+## Phase 17 — UI Polish (full redesign to the "Hundo" design system)
+
+Re-skin **and** restructure the whole client to match the imported Claude Design
+project, on both desktop and mobile. Presentation only — no backend/API/behaviour
+changes; server tests stay green.
+
+### Design source & locked decisions (from grilling)
+- **Design source:** Claude Design project `298c6232-b112-4b89-970a-b7104198b113`
+  ("Hundo site polish"). Files: `Hundo Screens.dc.html` (desktop, 13 screens) and
+  `Hundo Screens Mobile.dc.html` (mobile, same 13). Re-read specifics per screen
+  via the DesignSync MCP (`get_file`) — the inline tokens below are the summary,
+  the HTML is the pixel-level truth.
+- **Full redesign** — adopt the design's layouts, not just colours.
+- **Profile replaces Dashboard** — rename `/dashboard` → `/profile`; rebuild as the
+  design's Profile. Drop Recharts pie/bar; fold stat data into tiles + arc. Nav =
+  **Backlog / Discover / Profile**.
+- **Full responsive parity** — implement desktop *and* mobile per both files.
+  Mobile = bottom **tab bar** (Backlog/Discover/Profile) + single-column reflows;
+  sidebars/heroes collapse.
+
+### Design tokens (establish once, reference everywhere)
+- **Font:** Space Grotesk 300–700 (Google Fonts); default sans.
+- **Surfaces:** page `oklch(7% 0.022 265)`; panel `oklch(8–10% 0.02 265)`; input
+  `oklch(11% 0.022 265)`; borders `oklch(13–20% 0.022 265)`.
+- **Brand amber:** `oklch(76% 0.19 55)` (logo, primary CTA, rings, active nav, 100%
+  badge). Hover `oklch(81% 0.2 55)`. On-amber text `oklch(10% 0.02 55)`.
+- **Accent indigo:** `oklch(62% 0.24 280)` (register button, links). Hover `67–68%`.
+- **Text:** heading `oklch(96% 0.005 265)`; body `oklch(56% 0.013 265)`; muted
+  `oklch(40–46% 0.013 265)`.
+- **Semantic:** Metacritic green `oklch(72% 0.18 145)`; RAWG star = amber; status
+  colours (backlog/playing/completed/dropped/wishlist).
+- **Keyframes:** `floatA/B/C` (translateY ±10–16px loop, slight rotate),
+  `glowPulse` (opacity 0.55↔1). Inputs: focus ring
+  `box-shadow:0 0 0 3px oklch(76% 0.19 55 / 0.18)`, border → amber.
+
+### P1. Foundation — theme + primitives
+- [x] `client/index.html`: add Space Grotesk — `preconnect` to fonts.googleapis /
+  fonts.gstatic + `css2?family=Space+Grotesk:wght@300;400;500;600;700`
+- [x] `client/tailwind.config.js`: `theme.extend` → `fontFamily.sans` = Space
+  Grotesk; semantic `colors` (surface 0–4 scale, brand, accent, text, border,
+  status map, metacritic) as oklch literals; `keyframes` + `animation` for
+  `floatA/B/C` + `glowPulse`
+- [x] `client/src/index.css`: `@layer base` body bg/text + global input focus ring
+  + placeholder colour; `@layer utilities` for `.dot-grid`
+  (`radial-gradient(circle, oklch(100% 0 0 / 0.045) 1px, transparent 1px); 28px`)
+  and `.glow` radial helpers
+- [x] `client/src/components/ui/Button.jsx` (new): variants `primary` (amber),
+  `secondary` (indigo), `outline`, `ghost`; sizes sm/md/lg; hover lift + glow
+- [x] `client/src/components/ui/Input.jsx` + `Field.jsx` (new): styled input +
+  label/error wrapper; replace inline inputs and the local `Field` in
+  `BacklogEntryForm.jsx`
+- [x] `client/src/components/ui/Card.jsx` (new): bordered surface panel
+  (`oklch(10% 0.022 265)` bg, `oklch(18% 0.022 265)` border, radius 14px)
+- [x] `client/src/components/ui/Badge.jsx` (new): `tag` / `status` / `metacritic` /
+  `completion` variants — absorb `STATUS_COLOURS` (BacklogPage) + the Metacritic
+  badge from `GameMeta.jsx` into this single source
+- [x] `client/src/components/ui/CompletionRing.jsx` (new): conic-gradient ring,
+  props `size`/`percent`/`label`; metric = completed ÷ total entries. Reused on
+  Backlog sidebar, Profile hero, Game Details "Your Entry", auth brand panel
+- [x] `client/src/components/ui/RatingBar.jsx` (new): 10-segment bar, display +
+  interactive; align `StarRating.jsx` usage in `BacklogEntryForm` + Game Details
+
+### P2. Shared shell & routing
+- [x] `client/src/App.jsx`: split the global wrapper into **PublicLayout** (minimal
+  nav: amber logo + Sign in/Register, full-bleed, drop `max-w-6xl`) for
+  landing/auth and **AppLayout** (top nav + mobile bottom tab bar, full-width) for
+  protected screens. Rename route `/dashboard` → `/profile`
+- [x] `client/src/components/Navbar.jsx`: redesign — amber logo, search w/ icon,
+  Backlog/Discover/Profile links with active amber underline, Sign out outline
+  button; hidden `< md` (replaced by tab bar)
+- [x] `client/src/components/MobileTabBar.jsx` (new): fixed bottom tab bar
+  (Backlog/Discover/Profile icon+label, active = amber), shown `< md` in AppLayout
+- [x] Update any `/dashboard` links/redirects across the client to `/profile`
+
+### P3. Public / auth screens (re-skin + split-panel restructure)
+- [x] `LandingPage.jsx` (design 01): hero copy "Your backlog, actually managed.",
+  dual CTAs (amber "Get started" + outline "Sign in"), floating game-cover cards
+  visual (`floatA/B/C` + `glowPulse`), dot-grid + side glows; mobile = stacked
+- [x] `RegisterPage.jsx` (02) + `LoginPage.jsx` (03): split layout — left brand
+  panel (completion-ring "H", "Built for completionists.", game-spine strip) +
+  right form panel on the new primitives. Preserve Login's "Forgot password?" +
+  `EMAIL_NOT_VERIFIED` states and Register's pending/resend state. Mobile = form
+  only, brand condensed to top
+- [x] `VerifyEmailPage.jsx` (08/09/11) + "Check your inbox" (07) on RegisterPage +
+  `ForgotPasswordPage.jsx` (12) + `ResetPasswordPage.jsx` + "Reset link sent" (13):
+  centered branded status cards (ring/icon + heading + copy + CTA). Keep existing
+  button-click-to-verify + token-on-submit behaviour
+- [x] Restyle global toasts (react-hot-toast) to the dark/amber theme
+
+### P4. Core app screens
+- [x] `BacklogPage.jsx` (design 05): left **sidebar** (`CompletionRing` + status
+  filter list with counts) + main responsive grid; keep multi-status filter / sort
+  / search behaviour, restyle controls. Mobile = filters become a horizontal pill
+  row, single/two-col grid, tab bar
+- [x] `GameCard.jsx`: redesign cover-forward (real RAWG art, gradient fallback) with
+  completion/status badge + rating + hours; variants for backlog vs discover
+- [x] `GameDetailPage.jsx` (06): cinematic **hero** (RAWG cover bg + noise-grain SVG
+  + bottom fade + breadcrumb + title + tag/Metacritic/RAWG badges) over two-col
+  body — left About / Details grid / Screenshots; right "Your Entry" `Card`
+  (segmented status control, `RatingBar`, hours, notes). Rebuild
+  `BacklogEntryForm.jsx` on the new primitives. Mobile = hero + stacked single col
+- [x] `DiscoverPage.jsx` (10): header ("Discover" + count) + scrollable **category
+  pills** + responsive grid + search; keep data + infinite-scroll behaviour, retire
+  carousel-row layout to match design. Mobile = pills + single/two-col grid
+- [x] `ProfilePage.jsx` (rename from `DashboardPage.jsx`, design 04): hero (avatar =
+  email initials + completion arc + identity + stat tiles: games / hours / avg
+  rating / top genre) + completion donut with Done/Playing/Backlog counts +
+  **Library** section (filter pills + game grid). Reuse existing stat computations;
+  derive display name + member-since from email/`created_at`; derive tier from
+  completion %. Drop Recharts (optional simple genre bars). Mobile = stacked
+
+### Data-availability assumptions (no schema change)
+- Avatar = email initials; display name/handle derived from email; member-since
+  from `users.created_at`. Mock's bio/handle/tier fields omitted or derived.
+- Cover gradients in the mock are placeholders — use real RAWG art where present,
+  gradient fallback when missing.
+
+### Verify
+- [x] `cd client && npm run dev`; drive each route with chromium-cli/Playwright at
+  **1440px** and **390px**, screenshot, compare to the matching desktop/mobile
+  design screen (`/`, `/login`, `/register`, `/forgot-password`, `/reset-password`,
+  `/verify-email` + states, `/backlog`, `/games/:id`, `/discover`, `/profile`).
+  **Look at the screenshots** — correct fonts/colours, no blank frames, no console
+  errors
+- [x] `cd client && npm run build` — clean build (bundle 758KB → 364KB w/o Recharts)
+- [x] Spot-check: nav active states, mobile tab bar, Game Details status control +
+  rating, Discover pills, Backlog filters, completion rings with real data
+  (verified via Playwright mock-driven screenshots, 10 routes × desktop+mobile;
+  found+fixed Input forwardRef bug — hours/notes now populate from entry data)
+- [x] `cd server && npm test` still green (96/96, no backend change)
+- [x] Sync PRD.md: note the design-system adoption (Space Grotesk, oklch token
+  palette, primitive component library, `/dashboard` → `/profile`, responsive
+  tab-bar shell)
+
+### Follow-ups
+- [x] Remove unused `recharts` dependency from `client/package.json` (dropped when
+  the Dashboard became the Profile; already tree-shaken out of the bundle) and
+  update the lockfile; confirm `npm run build` still clean
+- [x] Fix "Member since" gap: the `POST /login` response omits `created_at`
+  (only `GET /me` includes it), so the Profile hides member-since until a reload.
+  Add `created_at` to the login response `SELECT` + returned user (and `/refresh`
+  for consistency) so `AuthContext` has it immediately; keep auth tests green
+  (96/96)

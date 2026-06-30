@@ -1,6 +1,50 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import AuthScreen from '../components/auth/AuthScreen.jsx';
+import IconBadge from '../components/auth/IconBadge.jsx';
+import Input from '../components/ui/Input.jsx';
+import Button from '../components/ui/Button.jsx';
+
+function AlertIcon() {
+  return (
+    <svg
+      width="38"
+      height="38"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="8" x2="12" y2="13" />
+      <line x1="12" y1="16.5" x2="12" y2="16.5" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="34" height="40" viewBox="0 0 34 40" fill="none">
+      <rect
+        x="3"
+        y="18"
+        width="28"
+        height="20"
+        rx="5"
+        stroke="currentColor"
+        strokeWidth="2.2"
+      />
+      <path
+        d="M9 18V12a8 8 0 0 1 16 0v6"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -15,17 +59,25 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="max-w-md mx-auto mt-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">Invalid link</h1>
-        <p className="text-gray-400 mb-6">
-          This reset link is missing a token. Please use the link from your
-          email or{' '}
-          <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300">
-            request a new one
-          </Link>
-          .
-        </p>
-      </div>
+      <AuthScreen>
+        <IconBadge>
+          <AlertIcon />
+        </IconBadge>
+        <div>
+          <h1 className="text-3xl font-bold mb-3">Invalid link</h1>
+          <p className="text-content-muted">
+            This reset link is missing a token. Please use the link from your
+            email or{' '}
+            <Link
+              to="/forgot-password"
+              className="text-accent hover:text-accent-hover font-medium"
+            >
+              request a new one
+            </Link>
+            .
+          </p>
+        </div>
+      </AuthScreen>
     );
   }
 
@@ -49,78 +101,91 @@ export default function ResetPasswordPage() {
 
   if (status === 'success') {
     return (
-      <div className="max-w-md mx-auto mt-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">Password reset!</h1>
-        <p className="text-gray-400 mb-6">
-          Your password has been updated. You can now sign in with your new
-          password.
-        </p>
-        <Link
-          to="/login"
-          className="inline-block bg-indigo-600 hover:bg-indigo-500 text-white
-                     font-medium px-6 py-2.5 rounded-lg transition-colors"
-        >
+      <AuthScreen>
+        <IconBadge>
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </IconBadge>
+        <div>
+          <h1 className="text-3xl font-bold mb-3">Password reset!</h1>
+          <p className="text-content-muted">
+            Your password has been updated. You can now sign in with your new
+            password.
+          </p>
+        </div>
+        <Button as={Link} to="/login">
           Sign in
-        </Link>
-      </div>
+        </Button>
+      </AuthScreen>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="max-w-md mx-auto mt-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">Link expired or invalid</h1>
-        <p className="text-gray-400 mb-6">
-          This reset link has already been used or has expired. Request a new
-          one below.
-        </p>
-        <Link
-          to="/forgot-password"
-          className="inline-block bg-indigo-600 hover:bg-indigo-500 text-white
-                     font-medium px-6 py-2.5 rounded-lg transition-colors"
-        >
+      <AuthScreen>
+        <IconBadge>
+          <AlertIcon />
+        </IconBadge>
+        <div>
+          <h1 className="text-3xl font-bold mb-3">Link expired or invalid</h1>
+          <p className="text-content-muted">
+            This reset link has already been used or has expired. Request a new
+            one below.
+          </p>
+        </div>
+        <Button as={Link} to="/forgot-password">
           Request new link
-        </Link>
-      </div>
+        </Button>
+      </AuthScreen>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto mt-12">
-      <h1 className="text-3xl font-bold mb-2">Reset your password</h1>
-      <p className="text-gray-400 mb-8">Enter a new password for your account.</p>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
+    <AuthScreen>
+      <IconBadge>
+        <LockIcon />
+      </IconBadge>
+      <div>
+        <h1 className="text-3xl font-bold mb-3">Reset your password</h1>
+        <p className="text-content-muted">
+          Enter a new password for your account.
+        </p>
+      </div>
+      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+        <Input
           type="password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           placeholder="New password (min 8 characters)"
           required
           minLength={8}
-          className="bg-gray-800 text-white placeholder-gray-500 rounded-lg
-                     px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        <input
+        <Input
           type="password"
           value={confirm}
-          onChange={e => setConfirm(e.target.value)}
+          onChange={(e) => setConfirm(e.target.value)}
           placeholder="Confirm new password"
           required
-          className="bg-gray-800 text-white placeholder-gray-500 rounded-lg
-                     px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
         />
-        {matchError && (
-          <p className="text-red-400 text-sm">{matchError}</p>
-        )}
-        <button
+        {matchError && <p className="text-red-400 text-sm">{matchError}</p>}
+        <Button
           type="submit"
           disabled={loading || !password || !confirm}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                     text-white font-medium px-6 py-2.5 rounded-lg transition-colors"
+          className="w-full"
         >
           {loading ? 'Resetting…' : 'Reset password'}
-        </button>
+        </Button>
       </form>
-    </div>
+    </AuthScreen>
   );
 }

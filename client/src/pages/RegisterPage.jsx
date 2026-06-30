@@ -5,6 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
+import AuthBrandPanel from '../components/auth/AuthBrandPanel.jsx';
+import AuthScreen from '../components/auth/AuthScreen.jsx';
+import IconBadge from '../components/auth/IconBadge.jsx';
+import Field from '../components/ui/Field.jsx';
+import Input from '../components/ui/Input.jsx';
+import Button from '../components/ui/Button.jsx';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -45,83 +51,102 @@ export default function RegisterPage() {
 
   if (pendingEmail) {
     return (
-      <div className="max-w-md mx-auto mt-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">Check your inbox</h1>
-        <p className="text-gray-400 mb-2">
-          We sent a verification link to{' '}
-          <span className="text-white font-medium">{pendingEmail}</span>.
-        </p>
-        <p className="text-gray-400 mb-8">
-          Click the link in the email to verify your account, then{' '}
-          <Link to="/login" className="text-indigo-400 hover:text-indigo-300">
-            sign in
-          </Link>
-          .
-        </p>
-        <p className="text-gray-500 text-sm">
+      <AuthScreen>
+        <IconBadge>
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="m3 7 9 6 9-6" />
+          </svg>
+        </IconBadge>
+        <div>
+          <h1 className="text-3xl font-bold mb-3">Check your inbox</h1>
+          <p className="text-content-muted">
+            We sent a verification link to{' '}
+            <span className="text-content font-medium">{pendingEmail}</span>.
+          </p>
+          <p className="text-content-muted mt-2">
+            Click the link in the email to verify your account, then{' '}
+            <Link
+              to="/login"
+              className="text-accent hover:text-accent-hover font-medium"
+            >
+              sign in
+            </Link>
+            .
+          </p>
+        </div>
+        <p className="text-content-subtle text-sm">
           Didn&apos;t receive it?{' '}
           <button
             onClick={handleResend}
             disabled={resending}
-            className="text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
+            className="text-accent hover:text-accent-hover disabled:opacity-50"
           >
             {resending ? 'Resending…' : 'Resend verification email'}
           </button>
         </p>
-      </div>
+      </AuthScreen>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto mt-12">
-      <h1 className="text-3xl font-bold mb-8">Create account</h1>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1.5">Email</label>
-          <input
-            {...register('email')}
-            type="email"
-            autoComplete="email"
-            className="w-full bg-gray-800 rounded-lg px-4 py-2.5 text-white
-                       outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          {errors.email && (
-            <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
-          )}
+    <div className="flex-1 flex">
+      <AuthBrandPanel />
+      <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
+        <div className="absolute inset-0 dot-grid pointer-events-none" />
+        <div className="relative z-10 w-full max-w-md">
+          <h1 className="text-3xl md:text-[38px] font-bold tracking-tight mb-2">
+            Create account
+          </h1>
+          <p className="text-content-muted mb-10">
+            Join and start building your library.
+          </p>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="space-y-5"
+          >
+            <Field label="Email" error={errors.email?.message}>
+              <Input
+                {...register('email')}
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+            </Field>
+            <Field label="Password" error={errors.password?.message}>
+              <Input
+                {...register('password')}
+                type="password"
+                autoComplete="new-password"
+                placeholder="Choose a strong password"
+              />
+            </Field>
+            {errors.root && (
+              <p className="text-red-400 text-sm">{errors.root.message}</p>
+            )}
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Creating account…' : 'Create account'}
+            </Button>
+          </form>
+          <p className="text-content-subtle text-sm mt-6 text-center">
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              className="text-accent hover:text-accent-hover font-medium"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
-        <div>
-          <label className="block text-sm text-gray-400 mb-1.5">Password</label>
-          <input
-            {...register('password')}
-            type="password"
-            autoComplete="new-password"
-            className="w-full bg-gray-800 rounded-lg px-4 py-2.5 text-white
-                       outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          {errors.password && (
-            <p className="text-red-400 text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
-        {errors.root && (
-          <p className="text-red-400 text-sm">{errors.root.message}</p>
-        )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50
-                     text-white font-medium py-2.5 rounded-lg transition-colors"
-        >
-          {isSubmitting ? 'Creating account…' : 'Create account'}
-        </button>
-      </form>
-      <p className="text-gray-400 text-sm mt-6 text-center">
-        Already have an account?{' '}
-        <Link to="/login" className="text-indigo-400 hover:text-indigo-300">
-          Sign in
-        </Link>
-      </p>
+      </div>
     </div>
   );
 }

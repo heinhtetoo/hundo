@@ -6,7 +6,7 @@ Gamers accumulate games faster than they can play them — through sales, bundle
 
 ## Solution
 
-Hundo is a multi-user, full-stack web application that gives each player a private game backlog. Users search a large game catalog, add titles to their collection, and assign each entry a play status, rating, hours played, and personal notes. A stats dashboard surfaces patterns in their gaming habits — completion rates, genre preferences, and time invested — helping them decide what to play next and see progress over time. The name is a nod to "getting a hundo" — gaming slang for 100%-ing a game — reflecting the app's purpose of helping players track their journey through their backlog.
+Hundo is a multi-user, full-stack web application that gives each player a private game backlog. Users search a large game catalog, add titles to their collection, and assign each entry a play status, rating, hours played, and personal notes. A profile page surfaces patterns in their gaming habits — completion rates, genre preferences, and time invested — helping them decide what to play next and see progress over time. The name is a nod to "getting a hundo" — gaming slang for 100%-ing a game — reflecting the app's purpose of helping players track their journey through their backlog.
 
 ## User Stories
 
@@ -61,18 +61,19 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 24. As a logged-in user, I want to search for a game by title within my backlog, so that I can quickly find a specific entry in a large collection.
 25. As a logged-in user, I want to sort my backlog by title, date added, rating, or hours played in ascending or descending order, so that I can view my collection in the order most useful to me at the time.
 
-### Stats Dashboard
+### Profile
 
-26. As a logged-in user, I want to see a pie chart breaking down my backlog by status, so that I can see at a glance how much of my collection I have completed versus left to play.
-27. As a logged-in user, I want to see a horizontal bar chart of my top genres by number of games, so that I can understand my genre preferences.
+26. As a logged-in user, I want to see my backlog broken down by status as a completion ring plus per-status counts on my profile, so that I can see at a glance how much of my collection I have completed versus left to play.
+27. As a logged-in user, I want my most-played genres reflected in my profile stats, so that I can understand my genre preferences.
 28. As a logged-in user, I want to see my completion rate over active games (completed, playing, and dropped — excluding wishlist and backlog) as a single stat, so that I can track my progress through games I have actually engaged with.
 29. As a logged-in user, I want to see my total hours played across all backlog entries, so that I know how much time I have invested in gaming.
 30. As a logged-in user, I want to see a list of my top 5 highest-rated games, so that I can quickly recall my favourites.
-31. As a logged-in user with an empty backlog, I want the dashboard to show an empty state with a prompt to add games, so that I am not left with a broken or empty-looking page.
+31. As a logged-in user with an empty backlog, I want the profile to show an empty state with a prompt to add games, so that I am not left with a broken or empty-looking page.
 32a. As a logged-in user, I want to see my average rating across all rated games, so that I have a sense of my overall enjoyment.
 32b. As a logged-in user, I want to see my longest game by hours played, so that I can identify where I have spent the most time.
 32c. As a logged-in user, I want to see my most-played genre, so that I understand my genre preferences at a glance.
 32d. As a logged-in user, I want to see a list of my recently completed games, so that I can remember what I just finished.
+32e. As a logged-in user, I want a profile page showing my avatar, a library-completion ring, member-since, headline stats (games, hours, average rating, top genre), and a filterable grid of my library, so that I have a personal home summarising my collection and progress.
 
 ### General UX
 
@@ -143,18 +144,24 @@ Two supporting tables back the newer features:
 
 ### Stats API
 
-- `GET /api/v1/stats` — returns all dashboard data in a single response to avoid multiple round trips: status counts, genre distribution, active completion rate (completed ÷ completed+playing+dropped), total hours played, average rating across rated games, longest game by hours played, top-5 games by rating, and recently completed games. All computed in a single set of SQL queries server-side.
+- `GET /api/v1/stats` — returns all dashboard data in a single response to avoid multiple round trips: status counts, genre distribution, active completion rate (completed ÷ completed+playing+dropped), total hours played, average rating across rated games, longest game by hours played, top-5 games by rating, and recently completed games. All computed in a single set of SQL queries server-side. Consumed by the Profile screen.
 
 ### Frontend Stack
 
 - **Build tool**: Vite
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS — configured with a custom design system (Space Grotesk type, an oklch semantic-token palette, and a reusable primitive library); see Frontend Design System below
 - **Server state**: TanStack Query (React Query) — handles caching, loading/error states, cache invalidation after mutations, and infinite-query pagination for the Discover grid's "Load more" button
 - **Forms**: React Hook Form with Zod resolvers via `@hookform/resolvers` — Zod schemas are shared with the backend
-- **Charts**: Recharts
 - **Routing**: React Router v6
 - **Notifications**: react-hot-toast — toast confirmations for add, save, and delete actions
-- **Star-rating widget**: custom `StarRating` component replacing the numeric rating input, providing an interactive 1–10 star selector
+- **Rating widget**: custom `RatingBar` component — a 10-segment interactive 1–10 selector (replacing the earlier star-rating widget)
+
+### Frontend Design System
+
+- A single dark, completionist-themed design system. Typography is Space Grotesk; colour is defined as semantic oklch tokens in the Tailwind theme (layered `surface`/`edge` neutrals, an amber `brand`, an indigo `accent`, `content` text steps, and `status`/`metacritic` accents) rather than ad-hoc utility colours.
+- A reusable primitive library in `client/src/components/ui/`: `Button`, `Input`, `Field`, `Card`, `Badge` (tag/status/metacritic/completion variants), `CompletionRing` (the conic-gradient "100%" motif reused across screens), and `RatingBar` (10-segment 1–10 selector).
+- Two layout shells via nested routes: `PublicLayout` (minimal nav) wraps the landing and auth screens; `AppLayout` (top navigation bar plus a bottom tab bar on small screens) wraps the protected screens. Navigation is Backlog / Discover / Profile.
+- The interface is responsive: the Backlog sidebar collapses to a filter pill row, split-panel auth drops to a single column, heroes and grids reflow, and a bottom tab bar replaces the top nav links below the `md` breakpoint.
 
 ### Error Handling
 
@@ -209,12 +216,12 @@ No prior tests exist (greenfield project). The first test file established for a
 - **Social features**: sharing backlogs, following other users, public profiles.
 - **Third-party OAuth**: Google, GitHub, or any other OAuth provider. Auth is hand-built with JWTs only.
 - **Platform-specific integrations**: no Steam, PSN, or Xbox API sync.
-- **Mobile application**: web-only, though the UI will be responsive.
+- **Mobile application**: no native app — web-only, though the UI is responsive (desktop and mobile layouts, with a bottom tab bar on small screens).
 - **Game recommendations**: no algorithm or suggestion engine.
 - **Achievements or gamification**: no badges, streaks, or points system.
 - **Multiple lists**: each user has exactly one backlog. No custom lists or shelves.
 - **Friends or social graph**: users have no awareness of each other.
-- **E2E testing**: Playwright/Cypress is out of scope. Manual browser verification covers frontend correctness.
+- **E2E testing**: no committed Playwright/Cypress suite. Ad-hoc Playwright screenshot runs and manual browser checks cover frontend correctness.
 - **Frontend unit tests**: component-level tests are not written. Visual correctness is verified in the browser.
 - **Admin panel**: no moderation or administrative interface.
 
