@@ -398,7 +398,7 @@ changes; server tests stay green.
   rating, Discover pills, Backlog filters, completion rings with real data
   (verified via Playwright mock-driven screenshots, 10 routes × desktop+mobile;
   found+fixed Input forwardRef bug — hours/notes now populate from entry data)
-- [ ] `cd server && npm test` still green (no backend change)
-- [ ] Sync PRD.md: note the design-system adoption (Space Grotesk, oklch token
+- [x] `cd server && npm test` still green (96/96, no backend change)
+- [x] Sync PRD.md: note the design-system adoption (Space Grotesk, oklch token
   palette, primitive component library, `/dashboard` → `/profile`, responsive
   tab-bar shell)
