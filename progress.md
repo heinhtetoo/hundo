@@ -387,15 +387,17 @@ changes; server tests stay green.
   gradient fallback when missing.
 
 ### Verify
-- [ ] `cd client && npm run dev`; drive each route with chromium-cli/Playwright at
+- [x] `cd client && npm run dev`; drive each route with chromium-cli/Playwright at
   **1440px** and **390px**, screenshot, compare to the matching desktop/mobile
   design screen (`/`, `/login`, `/register`, `/forgot-password`, `/reset-password`,
   `/verify-email` + states, `/backlog`, `/games/:id`, `/discover`, `/profile`).
   **Look at the screenshots** — correct fonts/colours, no blank frames, no console
   errors
-- [ ] `cd client && npm run build` — clean build
-- [ ] Spot-check: nav active states, mobile tab bar, Game Details status control +
+- [x] `cd client && npm run build` — clean build (bundle 758KB → 364KB w/o Recharts)
+- [x] Spot-check: nav active states, mobile tab bar, Game Details status control +
   rating, Discover pills, Backlog filters, completion rings with real data
+  (verified via Playwright mock-driven screenshots, 10 routes × desktop+mobile;
+  found+fixed Input forwardRef bug — hours/notes now populate from entry data)
 - [ ] `cd server && npm test` still green (no backend change)
 - [ ] Sync PRD.md: note the design-system adoption (Space Grotesk, oklch token
   palette, primitive component library, `/dashboard` → `/profile`, responsive
