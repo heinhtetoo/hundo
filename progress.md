@@ -402,3 +402,13 @@ changes; server tests stay green.
 - [x] Sync PRD.md: note the design-system adoption (Space Grotesk, oklch token
   palette, primitive component library, `/dashboard` → `/profile`, responsive
   tab-bar shell)
+
+### Follow-ups
+- [x] Remove unused `recharts` dependency from `client/package.json` (dropped when
+  the Dashboard became the Profile; already tree-shaken out of the bundle) and
+  update the lockfile; confirm `npm run build` still clean
+- [x] Fix "Member since" gap: the `POST /login` response omits `created_at`
+  (only `GET /me` includes it), so the Profile hides member-since until a reload.
+  Add `created_at` to the login response `SELECT` + returned user (and `/refresh`
+  for consistency) so `AuthContext` has it immediately; keep auth tests green
+  (96/96)
