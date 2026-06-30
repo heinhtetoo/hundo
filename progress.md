@@ -332,16 +332,16 @@ changes; server tests stay green.
   interactive; align `StarRating.jsx` usage in `BacklogEntryForm` + Game Details
 
 ### P2. Shared shell & routing
-- [ ] `client/src/App.jsx`: split the global wrapper into **PublicLayout** (minimal
+- [x] `client/src/App.jsx`: split the global wrapper into **PublicLayout** (minimal
   nav: amber logo + Sign in/Register, full-bleed, drop `max-w-6xl`) for
   landing/auth and **AppLayout** (top nav + mobile bottom tab bar, full-width) for
   protected screens. Rename route `/dashboard` → `/profile`
-- [ ] `client/src/components/Navbar.jsx`: redesign — amber logo, search w/ icon,
+- [x] `client/src/components/Navbar.jsx`: redesign — amber logo, search w/ icon,
   Backlog/Discover/Profile links with active amber underline, Sign out outline
   button; hidden `< md` (replaced by tab bar)
-- [ ] `client/src/components/MobileTabBar.jsx` (new): fixed bottom tab bar
+- [x] `client/src/components/MobileTabBar.jsx` (new): fixed bottom tab bar
   (Backlog/Discover/Profile icon+label, active = amber), shown `< md` in AppLayout
-- [ ] Update any `/dashboard` links/redirects across the client to `/profile`
+- [x] Update any `/dashboard` links/redirects across the client to `/profile`
 
 ### P3. Public / auth screens (re-skin + split-panel restructure)
 - [ ] `LandingPage.jsx` (design 01): hero copy "Your backlog, actually managed.",

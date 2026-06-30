@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiFetch } from '../lib/api.js';
@@ -19,8 +19,17 @@ function useGameSearch(query) {
   });
 }
 
+function navLinkClass({ isActive }) {
+  return [
+    'text-[15px] pb-0.5 border-b-2 transition-colors',
+    isActive
+      ? 'text-brand border-brand font-semibold'
+      : 'text-content-subtle border-transparent hover:text-content',
+  ].join(' ');
+}
+
 export default function Navbar() {
-  const { isAuthenticated, logout } = useAuth();
+  const { logout } = useAuth();
   const [query, setQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
   const navigate = useNavigate();
@@ -46,100 +55,93 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-gray-900 border-b border-gray-800 px-4 py-3">
-      <div className="max-w-6xl mx-auto flex items-center gap-4">
-        <Link to="/" className="text-xl font-bold text-indigo-400 shrink-0">
-          Hundo
-        </Link>
+    <nav
+      className="flex items-center gap-4 h-16 px-4 md:px-20
+                 border-b border-edge-subtle"
+    >
+      <Link
+        to="/backlog"
+        className="text-xl font-bold text-brand tracking-tight shrink-0"
+      >
+        Hundo
+      </Link>
 
-        {isAuthenticated && (
-          <div className="relative flex-1 max-w-md" ref={wrapperRef}>
-            <input
-              type="text"
-              placeholder="Search games to add..."
-              value={query}
-              onChange={e => { setQuery(e.target.value); setShowResults(true); }}
-              onFocus={() => setShowResults(true)}
-              onKeyDown={e => e.key === 'Escape' && setShowResults(false)}
-              className="w-full bg-gray-800 text-white placeholder-gray-500 rounded-lg
-                         px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            {showResults && results.length > 0 && (
-              <ul className="absolute top-full mt-1 w-full bg-gray-800 border
-                             border-gray-700 rounded-lg shadow-xl z-50 max-h-80
-                             overflow-y-auto">
-                {results.map(game => (
-                  <li
-                    key={game.id}
-                    onClick={() => handleSelect(game)}
-                    className="flex items-center gap-3 px-4 py-2.5
-                               hover:bg-gray-700 cursor-pointer"
-                  >
-                    {game.background_image ? (
-                      <img
-                        src={game.background_image}
-                        alt=""
-                        className="w-10 h-7 object-cover rounded shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-7 bg-gray-700 rounded shrink-0" />
-                    )}
-                    <span className="text-sm text-white line-clamp-1">
-                      {game.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      <div className="relative flex-1 max-w-xs" ref={wrapperRef}>
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5
+                     text-content opacity-30 pointer-events-none"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search games to add…"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setShowResults(true);
+          }}
+          onFocus={() => setShowResults(true)}
+          onKeyDown={(e) => e.key === 'Escape' && setShowResults(false)}
+          className="w-full bg-surface-input text-content rounded-lg border
+                     border-edge pl-9 pr-4 py-2 text-sm transition-colors"
+        />
+        {showResults && results.length > 0 && (
+          <ul
+            className="absolute top-full mt-1 w-full bg-surface-card border
+                       border-edge rounded-lg shadow-xl z-50 max-h-80
+                       overflow-y-auto"
+          >
+            {results.map((game) => (
+              <li
+                key={game.id}
+                onClick={() => handleSelect(game)}
+                className="flex items-center gap-3 px-4 py-2.5
+                           hover:bg-surface-input cursor-pointer"
+              >
+                {game.background_image ? (
+                  <img
+                    src={game.background_image}
+                    alt=""
+                    className="w-10 h-7 object-cover rounded shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-7 bg-surface-input rounded shrink-0" />
+                )}
+                <span className="text-sm text-content line-clamp-1">
+                  {game.name}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
+      </div>
 
-        <div className="ml-auto flex items-center gap-5 shrink-0">
-          {isAuthenticated ? (
-            <>
-              <Link
-                to="/backlog"
-                className="text-sm text-gray-300 hover:text-white"
-              >
-                Backlog
-              </Link>
-              <Link
-                to="/discover"
-                className="text-sm text-gray-300 hover:text-white"
-              >
-                Discover
-              </Link>
-              <Link
-                to="/dashboard"
-                className="text-sm text-gray-300 hover:text-white"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={logout}
-                className="text-sm text-gray-400 hover:text-white"
-              >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="text-sm text-gray-300 hover:text-white"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/register"
-                className="text-sm bg-indigo-600 hover:bg-indigo-500
-                           text-white px-4 py-1.5 rounded-lg"
-              >
-                Register
-              </Link>
-            </>
-          )}
+      <div className="ml-auto flex items-center gap-6 shrink-0">
+        <div className="hidden md:flex items-center gap-6">
+          <NavLink to="/backlog" className={navLinkClass}>
+            Backlog
+          </NavLink>
+          <NavLink to="/discover" className={navLinkClass}>
+            Discover
+          </NavLink>
+          <NavLink to="/profile" className={navLinkClass}>
+            Profile
+          </NavLink>
         </div>
+        <button
+          onClick={logout}
+          className="text-sm font-medium text-content-subtle border border-edge
+                     rounded-lg px-4 py-1.5 hover:text-content
+                     hover:border-edge-strong transition-colors"
+        >
+          Sign out
+        </button>
       </div>
     </nav>
   );
