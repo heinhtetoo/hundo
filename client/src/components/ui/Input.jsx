@@ -1,6 +1,9 @@
-export default function Input({ className = '', ...props }) {
+import { forwardRef } from 'react';
+
+const Input = forwardRef(function Input({ className = '', ...props }, ref) {
   return (
     <input
+      ref={ref}
       className={[
         'w-full box-border px-4 py-3 rounded-lg',
         'bg-surface-input text-content border border-edge',
@@ -12,4 +15,6 @@ export default function Input({ className = '', ...props }) {
       {...props}
     />
   );
-}
+});
+
+export default Input;
