@@ -101,7 +101,72 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <div className="relative px-4 md:px-8 lg:px-20 py-8 border-b border-edge-subtle overflow-hidden">
+      <div className="lg:hidden relative px-4 py-5 border-b border-edge-subtle overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(180deg, oklch(76% 0.19 55 / 0.06) 0%, transparent 100%)',
+          }}
+        />
+        <div className="absolute inset-0 dot-grid pointer-events-none" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-4">
+            <div
+              className="w-[72px] h-[72px] rounded-full p-1 shrink-0 shadow-[0_0_24px_oklch(76%_0.19_55_/_0.18)]"
+              style={{
+                background: `conic-gradient(oklch(76% 0.19 55) ${rate}%, oklch(16% 0.022 265) 0)`,
+              }}
+            >
+              <div className="w-full h-full rounded-full bg-surface-raised flex items-center justify-center">
+                <span className="text-xl font-bold text-brand">{initials}</span>
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[22px] font-bold tracking-[-0.025em] truncate mb-1">
+                {displayName}
+              </h1>
+              <span className="inline-block text-[9px] font-semibold tracking-[0.05em] text-brand bg-brand/10 border border-[oklch(76%_0.19_55_/_0.26)] rounded-full px-2 py-0.5">
+                {tierLabel(rate)}
+              </span>
+            </div>
+            <div className="shrink-0 text-center">
+              <div className="relative w-[54px] h-[54px] mx-auto">
+                <div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: `conic-gradient(oklch(76% 0.19 55) ${rate}%, oklch(14% 0.022 265) 0)`,
+                  }}
+                />
+                <div className="absolute inset-[6px] rounded-full bg-surface flex items-center justify-center">
+                  <span className="text-[13px] font-bold text-brand leading-none">
+                    {Math.round(rate)}%
+                  </span>
+                </div>
+              </div>
+              <span className="block text-[9px] font-medium uppercase tracking-[0.1em] text-content-subtle mt-1">
+                complete
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+            <span className="shrink-0 rounded-full bg-surface-input border border-edge px-[11px] py-[5px] text-[12px] font-medium text-[oklch(70%_0.01_265)] whitespace-nowrap">
+              {total} games
+            </span>
+            <span className="shrink-0 rounded-full bg-surface-input border border-edge px-[11px] py-[5px] text-[12px] font-medium text-[oklch(70%_0.01_265)] whitespace-nowrap">
+              {stats.totalHours}h
+            </span>
+            <span className="shrink-0 rounded-full bg-brand/10 border border-[oklch(76%_0.19_55_/_0.22)] px-[11px] py-[5px] text-[12px] font-medium text-brand whitespace-nowrap">
+              ★ {stats.averageRating != null ? stats.averageRating : '—'}
+            </span>
+            <span className="shrink-0 rounded-full bg-surface-input border border-edge px-[11px] py-[5px] text-[12px] font-medium text-[oklch(70%_0.01_265)] whitespace-nowrap">
+              {topGenre} fan
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="hidden lg:block relative px-4 md:px-8 lg:px-20 py-8 border-b border-edge-subtle overflow-hidden">
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -179,7 +244,7 @@ export default function ProfilePage() {
 
       <div className="px-4 md:px-8 lg:px-20 py-6 flex gap-7">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="hidden lg:flex items-center justify-between gap-3 mb-4">
             <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-content-subtle">
               Library
             </span>
@@ -196,12 +261,29 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          <div className="lg:hidden flex border-b border-edge-subtle mb-4">
+            {LIBRARY_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setLibFilter(f)}
+                className={[
+                  'flex-1 py-3 text-[12px] border-b-2 -mb-px capitalize transition-colors',
+                  libFilter === f
+                    ? 'border-brand text-brand font-semibold'
+                    : 'border-transparent text-content-faint font-medium',
+                ].join(' ')}
+              >
+                {f === 'all' ? `All (${total})` : `${f} (${counts[f] ?? 0})`}
+              </button>
+            ))}
+          </div>
+
           {filteredEntries.length === 0 ? (
             <p className="text-content-muted">No games in this view yet.</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {filteredEntries.map((entry) => (
-                <GameCard key={entry.id} entry={entry} />
+                <GameCard key={entry.id} entry={entry} variant="library" />
               ))}
             </div>
           )}

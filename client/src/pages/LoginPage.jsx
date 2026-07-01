@@ -60,7 +60,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex-1 flex">
+    <div className="relative flex-1 flex">
+      <div
+        className="hidden lg:block pointer-events-none absolute inset-x-0 top-0 h-[260px] z-[1]"
+        style={{
+          background:
+            'linear-gradient(180deg, oklch(76% 0.19 55 / 0.10) 0%, oklch(76% 0.19 55 / 0.04) 60%, transparent 100%)',
+        }}
+      />
       <AuthBrandPanel />
       <div className="flex-1 flex flex-col relative">
         <div className="absolute inset-0 dot-grid pointer-events-none" />

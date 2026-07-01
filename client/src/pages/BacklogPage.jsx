@@ -164,16 +164,29 @@ export default function BacklogPage() {
               {order === 'asc' ? '↑' : '↓'}
             </button>
             <div className="flex gap-0.5 rounded-[7px] border border-edge bg-surface-card p-1">
-              {['grid', 'list'].map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-2 py-1 rounded-[5px] text-xs transition-colors ${view === v ? 'bg-edge text-content' : 'text-content-subtle'}`}
-                  title={v}
-                >
-                  {v === 'grid' ? '▦' : '≡'}
-                </button>
-              ))}
+              <button
+                onClick={() => setView('grid')}
+                className={`px-[9px] py-[5px] rounded-[5px] transition-colors ${view === 'grid' ? 'bg-edge' : ''}`}
+                title="Grid view"
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" className={view === 'grid' ? 'text-content/70' : 'text-content-subtle'}>
+                  <rect x="1" y="1" width="5.5" height="5.5" rx="1.2" />
+                  <rect x="9.5" y="1" width="5.5" height="5.5" rx="1.2" />
+                  <rect x="1" y="9.5" width="5.5" height="5.5" rx="1.2" />
+                  <rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.2" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`px-[9px] py-[5px] rounded-[5px] transition-colors ${view === 'list' ? 'bg-edge' : ''}`}
+                title="List view"
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className={view === 'list' ? 'text-content/70' : 'text-content-subtle'}>
+                  <rect x="1" y="2.5" width="14" height="2" rx="1" fill="currentColor" />
+                  <rect x="1" y="7" width="14" height="2" rx="1" fill="currentColor" />
+                  <rect x="1" y="11.5" width="14" height="2" rx="1" fill="currentColor" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

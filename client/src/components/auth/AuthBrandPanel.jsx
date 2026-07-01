@@ -15,17 +15,9 @@ export default function AuthBrandPanel() {
   return (
     <div
       className="hidden lg:flex w-[496px] shrink-0 flex-col items-center
-                 justify-center px-[52px] py-[60px] relative bg-surface-raised
-                 border-r border-edge-subtle overflow-hidden"
+                 justify-center px-[52px] py-[60px] relative overflow-hidden"
     >
-      <div
-        className="absolute inset-x-0 top-0 h-60 pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(180deg, oklch(76% 0.19 55 / 0.09) 0%, transparent 100%)',
-        }}
-      />
-      <div className="absolute inset-0 dot-grid opacity-[0.03] pointer-events-none" />
+      <div className="absolute inset-0 dot-grid pointer-events-none" />
 
       <CompletionRing
         percent={100}
@@ -33,7 +25,7 @@ export default function AuthBrandPanel() {
         thickness={9}
         label="H"
         labelSize={46}
-        innerClassName="bg-surface-raised"
+        innerClassName="bg-surface"
         className="relative z-10 mb-[30px] shadow-[0_0_48px_oklch(76%_0.19_55_/_0.2)] rounded-full"
       />
 

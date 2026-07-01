@@ -106,6 +106,61 @@ function CompactCard({ entry }) {
   );
 }
 
+const STATUS_BADGE = {
+  completed: { label: '✓ Completed', cls: 'text-brand bg-[oklch(76%_0.19_55_/_0.12)]' },
+  playing: { label: '▶ Playing', cls: 'text-accent bg-[oklch(62%_0.24_280_/_0.12)]' },
+  backlog: { label: '◦ Backlog', cls: 'text-content-muted bg-[oklch(44%_0.013_265_/_0.1)]' },
+  dropped: { label: '✕ Dropped', cls: 'text-[oklch(62%_0.2_25)] bg-[oklch(52%_0.22_25_/_0.12)]' },
+  wishlist: { label: '♡ Wishlist', cls: 'text-[oklch(66%_0.14_222)] bg-[oklch(60%_0.14_222_/_0.12)]' },
+};
+
+function LibraryCard({ entry }) {
+  const completed = entry.status === 'completed';
+  const playing = entry.status === 'playing';
+  const badge = STATUS_BADGE[entry.status] ?? STATUS_BADGE.backlog;
+  const hours = entry.hours_played != null ? `${Number(entry.hours_played)}h` : null;
+  const border = completed
+    ? 'border-[oklch(76%_0.19_55_/_0.16)]'
+    : playing
+      ? 'border-[oklch(62%_0.24_280_/_0.2)]'
+      : 'border-edge';
+  return (
+    <Link
+      to={`/games/${entry.rawg_id}`}
+      className={`group block rounded-[10px] overflow-hidden bg-surface-card border ${border} transition-all hover:-translate-y-0.5`}
+    >
+      <Hero cover={entry.cover_image_url} seed={entry.rawg_id} className="h-[54px]">
+        {completed && (
+          <div className="absolute top-2 right-2 w-[33px] h-[33px] rounded-full bg-brand flex items-center justify-center">
+            <span className="text-[8px] font-bold text-brand-ink">100%</span>
+          </div>
+        )}
+        {playing && (
+          <span className="absolute top-2.5 right-2.5 w-[9px] h-[9px] rounded-full bg-accent shadow-[0_0_8px_oklch(62%_0.24_280_/_0.9)]" />
+        )}
+      </Hero>
+      <div className="px-3 py-2.5 flex flex-col gap-2">
+        <p className="text-[13px] font-semibold text-content truncate">{entry.title}</p>
+        <div className="flex items-center justify-between gap-2">
+          <span className={`inline-block rounded text-[11px] font-semibold px-2 py-[3px] ${badge.cls}`}>
+            {badge.label}
+          </span>
+          {(completed || playing) && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {completed && (
+                <span className="text-[11px] font-semibold text-brand">
+                  {entry.rating ? `★ ${entry.rating}` : '★ —'}
+                </span>
+              )}
+              {hours && <span className="text-[11px] text-content-subtle">{hours}</span>}
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function BrowseCard({ game }) {
   const year = game.released ? game.released.slice(0, 4) : null;
   const genre = game.genres?.[0]?.name;
@@ -147,6 +202,7 @@ function BrowseCard({ game }) {
 
 export default function GameCard({ game, entry, variant = 'compact' }) {
   if (entry && variant === 'featured') return <FeaturedCard entry={entry} />;
+  if (entry && variant === 'library') return <LibraryCard entry={entry} />;
   if (entry) return <CompactCard entry={entry} />;
   return <BrowseCard game={game} />;
 }

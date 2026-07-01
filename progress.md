@@ -593,3 +593,45 @@ Files: `pages/ProfilePage.jsx` (extract `ProfileSidebar.jsx` if needed),
   Game Details hours=24.5 / notes render correctly
 - [x] Final: all 7 pairs screenshot-verified + `cd server && npm test` green (96/96,
   untouched)
+
+### Review fixes — round 1 (desktop, from local testing)
+- [x] Forgot/Reset password: added `text-left` to the form card so the "Email address"
+  label aligns to the input's start (heading/body above stay centred)
+- [x] Backlog grid/list toggle: replaced the `▦`/`≡` glyphs with the design's SVG icons
+  (4-square grid + 3-line list)
+- [x] Game Details hero: title + year in an inner `items-baseline` group (year shares
+  the title's text baseline at any size — fixes mobile); the "100% COMPLETED" chip sits
+  in the outer `items-end` row with **no bottom margin**, so it aligns flush to the
+  inner group's bottom (≈ the title baseline) — chip box bottom on the baseline, desktop
+  + mobile. (Earlier `items-end`+padding and `overflow-hidden` attempts were size-fragile
+  / didn't hold.)
+- [x] Auth (Sign up + Sign in): moved the golden top wash out of the brand panel to a
+  full-width `absolute inset-x-0 top-0 h-[260px]` layer on the split container (`hidden
+  lg:block`), so it spans across + behind the form panel
+- [x] Auth (Sign up + Sign in): brand-panel dot-grid was `opacity-[0.03]` (≈invisible on
+  top of the 4.5% dots) — dropped the opacity so dots show behind the brand pane too;
+  removed the brand panel's `bg-surface-raised` + `border-r` so the split is one seamless
+  canvas with no dividing line (ring inner → `bg-surface` to match the page)
+- [x] Game Details mobile: added the design's `Your Entry / Overview / Media` tab strip
+  (`lg:hidden`) with `Your Entry` as default, so the entry form is front-and-centre
+  instead of buried below About/Details/Screenshots. Desktop two-column layout unchanged
+  (each section rendered once; tab state only gates visibility `< lg` via `hidden lg:block`).
+  Hid the card's own "Your Entry" header + 100% ring on mobile (`hidden lg:flex`) since the
+  active tab already says "Your Entry" — kept on desktop
+- [x] Profile mobile: rebuilt the header to match design 04 mobile — a separate
+  `lg:hidden` compact single-row layout (72px avatar + name + tier badge + small 54px %
+  donut, then a one-line stats-chip row); the elaborate desktop header is now
+  `hidden lg:block`. Hid the "Library" label on mobile and replaced the wrapping pill
+  row with full-width `flex-1` underline filter tabs (one line). Desktop unchanged.
+- [x] Profile mobile donut sublabel changed "done" → uppercase "complete" to match the
+  desktop label
+- [x] PublicLayout nav (via `useLocation`): on mobile hide the Register button on
+  `/register` and the "Sign in" link on `/login` (`max-lg:hidden`); both stay on desktop
+- [x] PublicLayout nav: on the auth pages, the Register action renders as a plain text
+  link on mobile (matching "Sign in") and the filled accent button on `lg`; landing keeps
+  the filled button at all sizes (per the mobile design)
+- [x] Profile library cards: added a `library` GameCard variant matching design 04 —
+  coloured status badge on **every** card (✓ Completed amber / ▶ Playing accent / ◦
+  Backlog grey / dropped / wishlist), completed card groups ★rating + hours on the right,
+  100% badge (completed) / pulse dot (playing) on the cover. Backlog `compact` card left
+  as-is (its design omits the badge on completed cards)

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -10,6 +11,12 @@ import CompletionRing from '../components/ui/CompletionRing.jsx';
 
 const NOISE =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")";
+
+const TABS = [
+  { key: 'entry', label: 'Your Entry' },
+  { key: 'overview', label: 'Overview' },
+  { key: 'media', label: 'Media' },
+];
 
 function useGame(rawgId) {
   return useQuery({
@@ -48,6 +55,7 @@ function DetailCell({ label, children }) {
 export default function GameDetailPage() {
   const { id: rawgId } = useParams();
   const queryClient = useQueryClient();
+  const [tab, setTab] = useState('entry');
 
   const { data: gameData, isLoading: gameLoading, error: gameError } =
     useGame(rawgId);
@@ -190,16 +198,18 @@ export default function GameDetailPage() {
             <span className="text-content-muted">{game.name}</span>
           </p>
           <div className="flex flex-wrap items-end gap-x-3 gap-y-2 mb-4">
-            <h1 className="text-3xl md:text-[52px] leading-none font-bold tracking-[-0.035em] drop-shadow-lg">
-              {game.name}
-            </h1>
-            {year && (
-              <span className="pb-0.5 md:pb-1.5 text-base font-semibold text-content-muted">
-                ({year})
-              </span>
-            )}
+            <div className="flex items-baseline gap-x-3">
+              <h1 className="text-3xl md:text-[52px] leading-none font-bold tracking-[-0.035em] drop-shadow-lg">
+                {game.name}
+              </h1>
+              {year && (
+                <span className="text-base font-semibold text-content-muted">
+                  ({year})
+                </span>
+              )}
+            </div>
             {completed && (
-              <Badge variant="completion" className="mb-0.5 md:mb-1.5">
+              <Badge variant="completion">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                 100% COMPLETED
               </Badge>
@@ -230,8 +240,27 @@ export default function GameDetailPage() {
         </div>
       </div>
 
-      <div className="px-4 md:px-8 lg:px-20 py-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
-        <div className="space-y-8 min-w-0">
+      <div className="px-4 md:px-8 lg:px-20 py-6 lg:py-8">
+        <div className="lg:hidden flex border-b border-edge-subtle mb-5">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={[
+                'flex-1 py-[11px] text-[12px] border-b-2 -mb-px transition-colors',
+                tab === t.key
+                  ? 'border-brand text-brand font-semibold'
+                  : 'border-transparent text-content-faint font-medium',
+              ].join(' ')}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-10">
+          <div className="min-w-0 lg:space-y-8">
+            <div className={`space-y-8 ${tab === 'overview' ? '' : 'hidden lg:block'}`}>
           {game.description_raw && (
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-content-subtle mb-3">
@@ -281,14 +310,17 @@ export default function GameDetailPage() {
               )}
             </div>
           </div>
+            </div>
 
-          <GameScreenshots rawgId={rawgId} />
-        </div>
+            <div className={tab === 'media' ? '' : 'hidden lg:block'}>
+              <GameScreenshots rawgId={rawgId} />
+            </div>
+          </div>
 
-        <div>
-          <Card className="overflow-hidden lg:sticky lg:top-6">
+          <div className={tab === 'entry' ? '' : 'hidden lg:block'}>
+            <Card className="overflow-hidden lg:sticky lg:top-6">
             <div
-              className="flex items-center justify-between px-[22px] py-4 border-b border-edge-subtle"
+              className="hidden lg:flex items-center justify-between px-[22px] py-4 border-b border-edge-subtle"
               style={{
                 background:
                   'linear-gradient(180deg, oklch(12% 0.024 265) 0%, oklch(10% 0.022 265) 100%)',
@@ -316,7 +348,8 @@ export default function GameDetailPage() {
                 onRemove={() => deleteMutation.mutate(entry.id)}
               />
             </div>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -159,7 +159,7 @@ export default function ResetPasswordPage() {
       </div>
       <form
         onSubmit={handleSubmit}
-        className="w-full rounded-2xl border border-[oklch(16%_0.022_265)] bg-[oklch(9.5%_0.022_265)] p-6 md:p-8 flex flex-col gap-4 md:gap-5 shadow-[0_20px_56px_rgba(0,0,0,0.45)]"
+        className="w-full text-left rounded-2xl border border-[oklch(16%_0.022_265)] bg-[oklch(9.5%_0.022_265)] p-6 md:p-8 flex flex-col gap-4 md:gap-5 shadow-[0_20px_56px_rgba(0,0,0,0.45)]"
       >
         <Input
           type="password"
