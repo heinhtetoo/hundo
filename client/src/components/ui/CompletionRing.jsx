@@ -3,6 +3,7 @@ export default function CompletionRing({
   size = 110,
   thickness,
   label,
+  labelSize,
   sublabel,
   innerClassName = 'bg-surface',
   className = '',
@@ -34,7 +35,7 @@ export default function CompletionRing({
         {display != null && (
           <span
             className="font-bold text-brand leading-none"
-            style={{ fontSize: Math.round(size * 0.22) }}
+            style={{ fontSize: labelSize ?? Math.round(size * 0.22) }}
           >
             {display}
           </span>

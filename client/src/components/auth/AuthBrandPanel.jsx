@@ -14,34 +14,28 @@ const SPINES = [
 export default function AuthBrandPanel() {
   return (
     <div
-      className="hidden lg:flex w-[460px] shrink-0 flex-col items-center
-                 justify-center px-[52px] py-[60px] relative bg-surface-raised
-                 border-r border-edge-subtle overflow-hidden"
+      className="hidden lg:flex w-[496px] shrink-0 flex-col items-center
+                 justify-center px-[52px] py-[60px] relative overflow-hidden"
     >
-      <div
-        className="absolute inset-x-0 top-0 h-60 pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(180deg, oklch(76% 0.19 55 / 0.09) 0%, transparent 100%)',
-        }}
-      />
-      <div className="absolute inset-0 dot-grid opacity-70 pointer-events-none" />
+      <div className="absolute inset-0 dot-grid pointer-events-none" />
 
       <CompletionRing
         percent={100}
         size={164}
+        thickness={9}
         label="H"
-        innerClassName="bg-surface-raised"
-        className="relative z-10 mb-7 shadow-[0_0_48px_oklch(76%_0.19_55_/_0.2)] rounded-full"
+        labelSize={46}
+        innerClassName="bg-surface"
+        className="relative z-10 mb-[30px] shadow-[0_0_48px_oklch(76%_0.19_55_/_0.2)] rounded-full"
       />
 
-      <h2 className="relative z-10 text-2xl font-bold tracking-tight mb-2.5">
+      <h2 className="relative z-10 text-[28px] font-bold tracking-tight mb-2.5">
         Hundo
       </h2>
-      <p className="relative z-10 text-sm font-semibold text-brand mb-3">
+      <p className="relative z-10 text-[14px] font-semibold text-brand mb-3">
         Built for completionists.
       </p>
-      <p className="relative z-10 text-sm leading-relaxed text-content-subtle text-center max-w-[280px]">
+      <p className="relative z-10 text-[14px] leading-relaxed text-content-subtle text-center max-w-[280px]">
         Track your backlog, log completions, and discover what to play next.
       </p>
 
@@ -49,7 +43,7 @@ export default function AuthBrandPanel() {
         {SPINES.map((spine, i) => (
           <div
             key={i}
-            className="relative w-9 h-[52px] rounded shrink-0"
+            className="relative w-9 h-[52px] rounded-[5px] shrink-0"
             style={{ background: `linear-gradient(148deg, ${spine.gradient})` }}
           >
             {spine.done && (

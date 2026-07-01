@@ -20,20 +20,30 @@ export default function LandingPage() {
       />
 
       <div
-        className="relative z-10 mx-auto max-w-6xl px-6 md:px-12 py-16 lg:py-0
+        className="relative z-10 mx-auto max-w-[1440px] px-6 md:px-28 py-6 lg:py-0
                    lg:min-h-[calc(100vh-68px)] flex flex-col lg:flex-row
-                   items-center gap-12"
+                   items-center gap-10"
       >
-        <div className="flex-1 max-w-xl text-center lg:text-left">
+        <div className="w-full lg:w-auto flex-1 lg:flex-[1.1] max-w-[600px]">
+          <span
+            className="lg:hidden inline-flex items-center gap-1.5 rounded-full
+                       border border-brand/20 bg-brand/10 px-3 py-[5px] mb-5"
+          >
+            <span className="w-[5px] h-[5px] rounded-full bg-brand" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand">
+              Game Backlog Tracker
+            </span>
+          </span>
           <p
-            className="text-[11px] font-semibold uppercase tracking-[0.18em]
-                       text-brand mb-7"
+            className="hidden lg:block text-[11px] font-semibold uppercase
+                       tracking-[0.18em] text-brand mb-7"
           >
             Game Backlog Tracker
           </p>
+
           <h1
-            className="text-5xl md:text-6xl font-bold leading-[1.03]
-                       tracking-tight text-content mb-6"
+            className="text-[44px] md:text-[68px] font-bold leading-[1.03]
+                       tracking-[-0.03em] text-content mb-4 md:mb-[26px]"
           >
             Your backlog,
             <br />
@@ -41,17 +51,75 @@ export default function LandingPage() {
             <br />
             managed.
           </h1>
-          <p className="text-lg leading-relaxed text-content-muted mb-12 max-w-md mx-auto lg:mx-0">
+          <p
+            className="text-[15px] md:text-[18px] leading-[1.6] md:leading-[1.65]
+                       text-content-muted mb-7 md:mb-12 max-w-[390px]"
+          >
             Track every game you&apos;ve played, want to play, and 100%&apos;d.
-            Discover what to play next.
+            <span className="hidden md:inline"> Discover what to play next.</span>
           </p>
-          <div className="flex flex-wrap gap-3.5 justify-center lg:justify-start">
-            <Button as={Link} to="/register" size="lg">
+          <div className="flex gap-[10px] md:gap-3.5">
+            <Button as={Link} to="/register" size="lg" className="flex-1 md:flex-none">
               Get started
             </Button>
             <Button as={Link} to="/login" variant="outline" size="lg">
               Sign in
             </Button>
+          </div>
+
+          <div className="lg:hidden flex items-end justify-center pt-14 pb-6">
+            <div className="relative w-[280px] h-[200px]">
+              <div
+                className="absolute -inset-5"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at center 45%, oklch(76% 0.19 55 / 0.11) 0%, transparent 65%)',
+                }}
+              />
+              <div
+                className="absolute left-[10px] top-[26px] w-[116px] h-[158px]
+                           rounded-[11px] rotate-[-8deg]
+                           shadow-[0_12px_28px_rgba(0,0,0,0.8)]"
+                style={{
+                  background:
+                    'linear-gradient(148deg, oklch(18% 0.12 260), oklch(26% 0.16 282))',
+                }}
+              />
+              <div
+                className="absolute right-[10px] top-[26px] w-[116px] h-[158px]
+                           rounded-[11px] rotate-[8deg]
+                           shadow-[0_12px_28px_rgba(0,0,0,0.8)]"
+                style={{
+                  background:
+                    'linear-gradient(148deg, oklch(14% 0.10 152), oklch(22% 0.13 162))',
+                }}
+              />
+              <div
+                className="absolute left-1/2 top-0 -translate-x-1/2 w-[126px]
+                           h-[170px] rounded-[11px] z-[2]
+                           shadow-[0_20px_48px_rgba(0,0,0,0.9)]"
+                style={{
+                  background:
+                    'linear-gradient(148deg, oklch(12% 0.08 348), oklch(20% 0.13 8))',
+                }}
+              >
+                <div
+                  className="absolute -top-3 -right-3 w-[38px] h-[38px]
+                             rounded-full bg-brand flex items-center
+                             justify-center z-[3]
+                             shadow-[0_4px_12px_oklch(76%_0.19_55_/_0.55)]"
+                >
+                  <span className="text-[8px] font-bold text-brand-ink">100%</span>
+                </div>
+                <div className="p-3.5 flex flex-col gap-1.5">
+                  <div className="h-[2px] w-[68%] bg-white/10 rounded" />
+                  <div className="h-[2px] w-[44%] bg-white/[0.07] rounded" />
+                </div>
+                <span className="absolute bottom-3 left-3 text-[7px] font-semibold uppercase tracking-[0.12em] text-brand/80">
+                  Completed ✓
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

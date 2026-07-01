@@ -22,7 +22,7 @@ const entrySchema = z.object({
   notes: z.string().max(2000),
 });
 
-export default function BacklogEntryForm({ entry, onSave, onRemove }) {
+export default function BacklogEntryForm({ entry, avgPlaytime, onSave, onRemove }) {
   const [confirming, setConfirming] = useState(false);
   const {
     register,
@@ -53,6 +53,14 @@ export default function BacklogEntryForm({ entry, onSave, onRemove }) {
   }, [entry, reset]);
 
   const status = watch('status');
+
+  const hoursNum = Number(watch('hoursPlayed')) || 0;
+  const hoursDelta =
+    avgPlaytime > 0 && hoursNum > 0
+      ? ` — ${hoursNum >= avgPlaytime ? '+' : ''}${
+          Math.round((hoursNum - avgPlaytime) * 10) / 10
+        }h vs avg`
+      : '';
 
   return (
     <form onSubmit={handleSubmit(onSave)} className="space-y-5">
@@ -86,13 +94,24 @@ export default function BacklogEntryForm({ entry, onSave, onRemove }) {
       />
 
       <Field label="Hours played" error={errors.hoursPlayed?.message}>
-        <Input
-          {...register('hoursPlayed')}
-          type="number"
-          min="0"
-          step="0.5"
-          placeholder="—"
-        />
+        <div className="relative">
+          <Input
+            {...register('hoursPlayed')}
+            type="number"
+            min="0"
+            step="0.5"
+            placeholder="—"
+            className="pr-12"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-medium text-content-faint pointer-events-none">
+            hrs
+          </span>
+        </div>
+        {avgPlaytime > 0 && (
+          <p className="mt-1.5 text-[11px] text-content-faint">
+            Avg for this game: {avgPlaytime}h{hoursDelta}
+          </p>
+        )}
       </Field>
 
       <Field label="Notes" error={errors.notes?.message}>

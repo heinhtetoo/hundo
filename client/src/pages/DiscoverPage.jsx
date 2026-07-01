@@ -74,26 +74,40 @@ export default function DiscoverPage() {
   const yearOptions = Array.from({ length: 30 }, (_, i) => currentYear - i);
 
   const selectCls =
-    'bg-surface-input text-content rounded-lg border border-edge px-3 py-2 ' +
-    'text-sm outline-none cursor-pointer';
+    'bg-surface-card text-content-muted rounded-[7px] border border-edge ' +
+    'px-3 py-1.5 text-[13px] outline-none cursor-pointer';
 
   function pillCls(active) {
     return [
-      'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors',
+      'shrink-0 px-4 py-1.5 rounded-full text-xs transition-colors',
       active
-        ? 'bg-brand text-brand-ink'
-        : 'bg-surface-card text-content-muted hover:text-content',
+        ? 'bg-brand text-brand-ink font-semibold'
+        : 'border border-edge text-content-muted font-medium hover:border-edge-strong hover:text-content',
     ].join(' ');
   }
+
+  function clearFilters() {
+    setGenre('');
+    setPlatform('');
+    setYear('');
+    setSort('rating');
+    setOrder('desc');
+  }
+
+  const hasFilters = genre || platform || year || sort !== 'rating' || order !== 'desc';
 
   return (
     <div className="px-4 md:px-8 lg:px-20 py-6">
       <div className="flex items-baseline gap-3 mb-4">
-        <h1 className="text-3xl font-bold tracking-tight">Discover</h1>
-        <span className="text-sm text-content-subtle">Find your next game</span>
+        <h1 className="text-[30px] font-bold tracking-[-0.03em]">Discover</h1>
+        <span className="text-sm text-content-faint">
+          {games.length > 0
+            ? `${games.length}${hasNextPage ? '+' : ''} games`
+            : 'Find your next game'}
+        </span>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+      <div className="flex gap-[7px] overflow-x-auto scrollbar-none pb-0.5 mb-3">
         <button onClick={() => setGenre('')} className={pillCls(!genre)}>
           All
         </button>
@@ -108,49 +122,65 @@ export default function DiscoverPage() {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-8">
-        <select
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          className={selectCls}
-        >
-          <option value="">All platforms</option>
-          {(platformsData?.platforms ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          className={selectCls}
-        >
-          <option value="">All years</option>
-          {yearOptions.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          className={selectCls}
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
-          className={`${selectCls} text-content-muted hover:text-content`}
-          title={order === 'asc' ? 'Ascending' : 'Descending'}
-        >
-          {order === 'asc' ? '↑' : '↓'}
-        </button>
+      <div className="flex items-center justify-between gap-3 pb-3.5 mb-6 border-b border-edge-subtle">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            className={selectCls}
+          >
+            <option value="">All platforms</option>
+            {(platformsData?.platforms ?? []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            className={selectCls}
+          >
+            <option value="">All years</option>
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className={selectCls}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+            className={`${selectCls} hover:text-content`}
+            title={order === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {order === 'asc' ? '↑' : '↓'}
+          </button>
+          {games.length > 0 && (
+            <span className="pl-1 text-[13px] text-content-faint">
+              {games.length}
+              {hasNextPage ? '+' : ''} results
+            </span>
+          )}
+        </div>
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            className="shrink-0 text-[13px] text-content-faint hover:text-content-muted"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -159,7 +189,7 @@ export default function DiscoverPage() {
         <p className="text-content-muted">No games found for these filters.</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
             {games.map((game) => (
               <GameCard key={game.id} game={game} />
             ))}

@@ -1,24 +1,36 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../lib/api.js';
 import GameCard from '../components/GameCard.jsx';
-import CompletionRing from '../components/ui/CompletionRing.jsx';
-import Input from '../components/ui/Input.jsx';
+import BacklogSidebar, { STATUS_META } from '../components/BacklogSidebar.jsx';
 
-const STATUSES = ['backlog', 'playing', 'completed', 'dropped', 'wishlist'];
 const SORT_OPTIONS = [
   { value: 'created_at', label: 'Date added' },
-  { value: 'title', label: 'Title' },
+  { value: 'title', label: 'Title A–Z' },
   { value: 'rating', label: 'Rating' },
   { value: 'hours_played', label: 'Hours' },
 ];
 
-function useBacklog({ statuses, search, sort, order }) {
+const SECTION_ORDER = ['playing', 'completed', 'backlog', 'wishlist', 'dropped'];
+const SECTION_LABEL = {
+  playing: 'Now Playing',
+  completed: 'Completed',
+  backlog: 'Backlog',
+  wishlist: 'Wishlist',
+  dropped: 'Dropped',
+};
+const COUNT_COLOR = {
+  completed: 'text-brand',
+  playing: 'text-accent',
+};
+
+function useBacklog({ activeStatus, search, sort, order }) {
   return useQuery({
-    queryKey: ['backlog', { statuses, search, sort, order }],
+    queryKey: ['backlog', { activeStatus, search, sort, order }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statuses.length > 0) params.set('status', statuses.join(','));
+      if (activeStatus) params.set('status', activeStatus);
       if (search.trim()) params.set('search', search.trim());
       if (sort) params.set('sort', sort);
       params.set('order', order);
@@ -38,152 +50,181 @@ function useStats() {
   });
 }
 
-function FilterButton({ active, label, count, onClick }) {
+function Pill({ active, count, children, onClick }) {
   return (
     <button
       onClick={onClick}
       className={[
-        'flex items-center justify-between px-3 py-2 rounded-lg text-sm',
-        'capitalize transition-colors text-left',
+        'shrink-0 rounded-full px-4 py-1.5 text-[13px] transition-colors whitespace-nowrap',
         active
-          ? 'bg-[oklch(76%_0.19_55_/_0.12)] text-brand font-semibold'
-          : 'text-content-muted hover:text-content hover:bg-surface-card',
+          ? 'bg-brand text-brand-ink font-semibold'
+          : 'border border-edge text-content-muted font-medium hover:border-edge-strong hover:text-content',
       ].join(' ')}
     >
-      <span>{label}</span>
-      <span className="text-xs text-content-subtle">{count}</span>
+      {children}
+      {count != null && <span className="lg:hidden"> ({count})</span>}
     </button>
   );
 }
 
+function AddGhost() {
+  return (
+    <Link
+      to="/discover"
+      className="rounded-[10px] border border-dashed border-edge-strong flex flex-col
+                 items-center justify-center gap-2 min-h-[134px] opacity-50
+                 hover:opacity-100 hover:border-content-faint transition-all"
+    >
+      <span className="w-7 h-7 rounded-full border border-dashed border-edge-strong flex items-center justify-center text-lg font-light text-content-muted leading-none">
+        +
+      </span>
+      <span className="text-[11px] font-medium text-content-faint">Add game</span>
+    </Link>
+  );
+}
+
 export default function BacklogPage() {
-  const [statuses, setStatuses] = useState([]);
+  const [activeStatus, setActiveStatus] = useState(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('created_at');
   const [order, setOrder] = useState('desc');
+  const [view, setView] = useState('grid');
 
-  const { data, isLoading } = useBacklog({ statuses, search, sort, order });
+  const { data, isLoading } = useBacklog({ activeStatus, search, sort, order });
   const entries = data?.entries ?? [];
 
   const { data: statsData } = useStats();
-  const counts = statsData?.stats?.statusCounts ?? {};
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  const completionRate = statsData?.stats?.completionRate ?? 0;
+  const stats = statsData?.stats ?? {};
+  const counts = stats.statusCounts ?? {};
+  const totalGames = Object.values(counts).reduce((a, b) => a + b, 0);
+  const genres = (stats.genreDistribution ?? []).slice(0, 4);
 
-  function toggleStatus(s) {
-    setStatuses((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s],
-    );
-  }
+  const sections = SECTION_ORDER.map((st) => ({
+    st,
+    items: entries.filter((e) => e.status === st),
+  })).filter((s) => s.items.length > 0);
 
-  const selectCls =
-    'bg-surface-input text-content rounded-lg border border-edge px-3 py-2 ' +
-    'text-sm outline-none cursor-pointer';
+  const gridCls =
+    view === 'list'
+      ? 'grid grid-cols-1 gap-2.5'
+      : 'grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5';
+
+  const controlCls =
+    'bg-surface-card text-content-muted rounded-[7px] border border-edge px-3 py-1.5 text-[13px] outline-none';
 
   return (
     <div className="flex">
-      <aside
-        className="hidden lg:flex w-64 shrink-0 flex-col gap-7 p-6
-                   border-r border-edge-subtle bg-surface-raised
-                   min-h-[calc(100vh-64px)]"
-      >
-        <CompletionRing
-          percent={completionRate}
-          size={120}
-          sublabel="complete"
-          innerClassName="bg-surface-raised"
-          className="mx-auto"
-        />
-        <nav className="flex flex-col gap-1">
-          <FilterButton
-            active={statuses.length === 0}
-            label="All"
-            count={total}
-            onClick={() => setStatuses([])}
-          />
-          {STATUSES.map((s) => (
-            <FilterButton
-              key={s}
-              active={statuses.includes(s)}
-              label={s}
-              count={counts[s] ?? 0}
-              onClick={() => toggleStatus(s)}
-            />
-          ))}
-        </nav>
-      </aside>
+      <BacklogSidebar
+        completionRate={stats.completionRate ?? 0}
+        totalGames={totalGames}
+        totalHours={stats.totalHours ?? 0}
+        counts={counts}
+        genres={genres}
+        activeStatus={activeStatus}
+        onSelect={setActiveStatus}
+      />
 
-      <div className="flex-1 min-w-0 px-4 md:px-8 py-6">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <h1 className="text-2xl font-bold mr-auto">My Backlog</h1>
-          <Input
-            type="text"
-            placeholder="Search titles…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-auto py-2"
-          />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className={selectCls}
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
-            className={`${selectCls} text-content-muted hover:text-content`}
-            title={order === 'asc' ? 'Ascending' : 'Descending'}
-          >
-            {order === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
-
-        <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-5">
-          <button
-            onClick={() => setStatuses([])}
-            className={[
-              'shrink-0 px-4 py-1.5 rounded-full text-xs font-medium capitalize',
-              statuses.length === 0
-                ? 'bg-brand text-brand-ink'
-                : 'bg-surface-card text-content-muted',
-            ].join(' ')}
-          >
-            All
-          </button>
-          {STATUSES.map((s) => (
-            <button
-              key={s}
-              onClick={() => toggleStatus(s)}
-              className={[
-                'shrink-0 px-4 py-1.5 rounded-full text-xs font-medium capitalize',
-                statuses.includes(s)
-                  ? 'bg-brand text-brand-ink'
-                  : 'bg-surface-card text-content-muted',
-              ].join(' ')}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-
-        {isLoading ? (
-          <p className="text-content-muted">Loading…</p>
-        ) : entries.length === 0 ? (
-          <p className="text-content-muted">
-            No games found. Search for a game in the navbar to add it.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-            {entries.map((entry) => (
-              <GameCard key={entry.id} entry={entry} />
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex items-center justify-between gap-4 px-5 md:px-8 py-4 border-b border-edge-subtle">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            <Pill active={activeStatus === null} count={totalGames} onClick={() => setActiveStatus(null)}>
+              All
+            </Pill>
+            {STATUS_META.map((s) => (
+              <Pill
+                key={s.key}
+                active={activeStatus === s.key}
+                count={counts[s.key] ?? 0}
+                onClick={() => setActiveStatus(s.key)}
+              >
+                {s.label}
+              </Pill>
             ))}
           </div>
-        )}
+          <div className="hidden lg:flex items-center gap-2.5">
+            <input
+              type="text"
+              placeholder="Search titles…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`${controlCls} w-44 text-content`}
+            />
+            <select value={sort} onChange={(e) => setSort(e.target.value)} className={`${controlCls} cursor-pointer`}>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+              className={`${controlCls} cursor-pointer hover:text-content`}
+              title={order === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              {order === 'asc' ? '↑' : '↓'}
+            </button>
+            <div className="flex gap-0.5 rounded-[7px] border border-edge bg-surface-card p-1">
+              <button
+                onClick={() => setView('grid')}
+                className={`px-[9px] py-[5px] rounded-[5px] transition-colors ${view === 'grid' ? 'bg-edge' : ''}`}
+                title="Grid view"
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" className={view === 'grid' ? 'text-content/70' : 'text-content-subtle'}>
+                  <rect x="1" y="1" width="5.5" height="5.5" rx="1.2" />
+                  <rect x="9.5" y="1" width="5.5" height="5.5" rx="1.2" />
+                  <rect x="1" y="9.5" width="5.5" height="5.5" rx="1.2" />
+                  <rect x="9.5" y="9.5" width="5.5" height="5.5" rx="1.2" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`px-[9px] py-[5px] rounded-[5px] transition-colors ${view === 'list' ? 'bg-edge' : ''}`}
+                title="List view"
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className={view === 'list' ? 'text-content/70' : 'text-content-subtle'}>
+                  <rect x="1" y="2.5" width="14" height="2" rx="1" fill="currentColor" />
+                  <rect x="1" y="7" width="14" height="2" rx="1" fill="currentColor" />
+                  <rect x="1" y="11.5" width="14" height="2" rx="1" fill="currentColor" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 px-4 md:px-8 py-6 flex flex-col gap-6">
+          {isLoading ? (
+            <p className="text-content-muted">Loading…</p>
+          ) : sections.length === 0 ? (
+            <p className="text-content-muted">
+              No games found. Search for a game in the navbar to add it.
+            </p>
+          ) : (
+            sections.map(({ st, items }) => (
+              <section key={st}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint mb-3">
+                  {SECTION_LABEL[st]}
+                  {st !== 'playing' && (
+                    <span className={COUNT_COLOR[st] ?? 'text-content-muted'}> · {items.length}</span>
+                  )}
+                </p>
+                {st === 'playing' ? (
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                    {items.map((e) => (
+                      <GameCard key={e.id} entry={e} variant="featured" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className={gridCls}>
+                    {items.map((e) => (
+                      <GameCard key={e.id} entry={e} />
+                    ))}
+                    {st === 'backlog' && view === 'grid' && <AddGhost />}
+                  </div>
+                )}
+              </section>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
