@@ -36,7 +36,7 @@ function useBacklogEntry(rawgId) {
 
 function DetailCell({ label, children }) {
   return (
-    <div className="flex flex-col gap-0.5 px-4 py-3 bg-surface-card">
+    <div className="flex flex-col gap-0.5 px-4 py-[13px] bg-surface-card">
       <span className="text-[10px] font-medium uppercase tracking-wider text-content-subtle">
         {label}
       </span>
@@ -135,6 +135,7 @@ export default function GameDetailPage() {
   const developers = game.developers ?? [];
   const publishers = game.publishers ?? [];
   const completed = entry?.status === 'completed';
+  const year = game.released ? game.released.slice(0, 4) : null;
 
   return (
     <div>
@@ -155,14 +156,28 @@ export default function GameDetailPage() {
           />
         )}
         <div
-          className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
-          style={{ backgroundImage: NOISE, backgroundSize: '200px' }}
-        />
-        <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(0deg, oklch(7% 0.022 265) 4%, transparent 60%), linear-gradient(90deg, oklch(7% 0.022 265 / 0.85) 0%, transparent 55%)',
+              'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 3px)',
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.18] pointer-events-none"
+          style={{ backgroundImage: NOISE, backgroundSize: '200px' }}
+        />
+        <div
+          className="absolute inset-y-0 left-0 w-[520px] pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(90deg, oklch(7% 0.022 265 / 0.8) 0%, transparent 100%)',
+          }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(0deg, oklch(7% 0.022 265) 0%, transparent 100%)',
           }}
         />
 
@@ -174,12 +189,17 @@ export default function GameDetailPage() {
             <span className="mx-1.5 opacity-40">›</span>
             <span className="text-content-muted">{game.name}</span>
           </p>
-          <div className="flex flex-wrap items-end gap-3 mb-3">
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight drop-shadow-lg">
+          <div className="flex flex-wrap items-end gap-x-3 gap-y-2 mb-4">
+            <h1 className="text-3xl md:text-[52px] leading-none font-bold tracking-[-0.035em] drop-shadow-lg">
               {game.name}
             </h1>
+            {year && (
+              <span className="pb-0.5 md:pb-1.5 text-base font-semibold text-content-muted">
+                ({year})
+              </span>
+            )}
             {completed && (
-              <Badge variant="completion" className="mb-1.5">
+              <Badge variant="completion" className="mb-0.5 md:mb-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-brand" />
                 100% COMPLETED
               </Badge>
@@ -192,6 +212,9 @@ export default function GameDetailPage() {
             {game.platforms.map((p) => (
               <Badge key={p.id}>{p.name}</Badge>
             ))}
+            {(game.metacritic != null || game.rating > 0) && (
+              <span className="w-px h-4 bg-white/10 mx-0.5" />
+            )}
             {game.metacritic != null && (
               <Badge variant="metacritic" score={game.metacritic}>
                 {game.metacritic} Metacritic
@@ -224,7 +247,7 @@ export default function GameDetailPage() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-content-subtle mb-3">
               Details
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-edge-subtle border border-edge-subtle rounded-[10px] overflow-hidden">
+            <div className="grid grid-cols-2 gap-px bg-edge-subtle border border-edge-subtle rounded-[10px] overflow-hidden">
               {developers.length > 0 && (
                 <DetailCell label="Developer">
                   {developers.join(', ')}
@@ -263,9 +286,15 @@ export default function GameDetailPage() {
         </div>
 
         <div>
-          <Card className="overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-edge-subtle">
-              <span className="font-bold text-content">
+          <Card className="overflow-hidden lg:sticky lg:top-6">
+            <div
+              className="flex items-center justify-between px-[22px] py-4 border-b border-edge-subtle"
+              style={{
+                background:
+                  'linear-gradient(180deg, oklch(12% 0.024 265) 0%, oklch(10% 0.022 265) 100%)',
+              }}
+            >
+              <span className="text-sm font-bold text-content">
                 {entry ? 'Your Entry' : 'Add to backlog'}
               </span>
               {completed && (
@@ -274,13 +303,15 @@ export default function GameDetailPage() {
                   size={38}
                   thickness={4}
                   label="100%"
+                  labelSize={9}
                   innerClassName="bg-surface-card"
                 />
               )}
             </div>
-            <div className="p-5">
+            <div className="p-[22px]">
               <BacklogEntryForm
                 entry={entry}
+                avgPlaytime={game.playtime}
                 onSave={handleSave}
                 onRemove={() => deleteMutation.mutate(entry.id)}
               />

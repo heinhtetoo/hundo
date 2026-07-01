@@ -538,22 +538,21 @@ Files: `pages/BacklogPage.jsx`, `components/GameCard.jsx` (extract
 ### P5. Game Details (design 06)
 Files: `pages/GameDetailPage.jsx`, `components/BacklogEntryForm.jsx`,
 `components/GameScreenshots.jsx`, `components/ui/RatingBar.jsx`
-- [ ] Hero (300px): layered background — base 135° gradient
-  (`oklch(10% 0.06 25)→…→oklch(12% 0.05 240)`), texture repeating-linear-gradient, SVG
-  noise `opacity-0.18`, right radial glow, 160px bottom fade, 520px left wash; over
-  real RAWG art when present
-- [ ] Hero content: breadcrumb; title `text-[52px]` + year + inline "100% COMPLETED"
-  pill; tag pills + divider + Metacritic badge + RAWG "★ x / 5"
-- [ ] Details grid: force 2-col all breakpoints, all 6 cells always rendered (Developer,
-  Publisher, Released, ESRB, Avg Playtime, Website), 1px gaps, `bg-[oklch(9.5%_0.02_265)]`
-  cells `p-[13px_16px]`, uppercase 10px labels
-- [ ] Screenshots: `grid-cols-3` on desktop
-- [ ] Your Entry card: header + mini 38px ring (only when completed); segmented 2×2
-  status control (`gap-[5px]`, selected amber-tinted); RatingBar; Hours input with
-  absolute "hrs" suffix + helper "Avg for this game: Nh — you beat it by Xh" (derive
-  from RAWG playtime vs hours); Notes + counter; "Save changes" + "Remove"
-- [ ] Mobile: hero + single column; keep design's mobile section tabs (Your Entry /
-  Overview / Media) if low-cost, else stack
+- [x] Hero (260/300px): layered overlays — texture repeating-linear-gradient, SVG
+  noise `opacity-[0.18]`, 520px left wash, 160px bottom fade to page; real RAWG art
+  when present, gradient fallback otherwise
+- [x] Hero content: breadcrumb; title `md:text-[52px]` + `(year)` + inline "100%
+  COMPLETED" pill; tag/platform pills + divider + Metacritic badge + RAWG "★ x / 5"
+- [x] Details grid: `grid-cols-2` at all breakpoints, cells `px-4 py-[13px]`, uppercase
+  10px labels (cells still render conditionally on available RAWG data)
+- [x] Screenshots: `grid-cols-3`
+- [x] Your Entry card: header (gradient bg) + mini 38px ring `labelSize={9}` when
+  completed; segmented status control (kept all 5 statuses — Wishlist retained for
+  function); RatingBar already shows "N / 10"; Hours input with absolute "hrs" suffix +
+  helper "Avg for this game: Nh — ±Xh vs avg" (from `game.playtime`); Notes + counter;
+  Save/Remove. Card `lg:sticky`
+- [x] Mobile: hero + single stacked column (kept stacking rather than the design's
+  Your Entry/Overview/Media tab switcher — low-cost path per plan)
 
 ### P6. Discover (design 10)
 Files: `pages/DiscoverPage.jsx`, `components/GameCard.jsx` (browse variant),
