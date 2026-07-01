@@ -450,32 +450,38 @@ Presentation only; no backend/API/behaviour changes; server tests stay green.
 
 ### P1. Landing (design 01) + shared public shell
 Files: `components/PublicLayout.jsx`, `pages/LandingPage.jsx`
-- [ ] PublicLayout nav: `px-[112px]` desktop; logo 700/21px brand; "Sign in" link
-  `oklch(57% 0.014 265)`; Register button accent `px-[22px] py-2.5 text-[15px] rounded-lg`
-- [ ] Hero container `px-[112px]`; tagline 600/11px uppercase amber `tracking-[0.18em]
-  mb-[28px]`
-- [ ] H1 `text-[68px] leading-[1.03] tracking-[-0.03em] mb-[26px]`, "actually" span
-  amber; mobile `text-[44px]`
-- [ ] Body `text-[18px] leading-[1.65] max-w-[390px] mb-[48px]`; mobile 15px/1.6
-- [ ] CTAs `gap-[14px]`: "Get started" amber (`px-[40px] py-[16px]`), "Sign in" outline
-  `border-[oklch(22%_0.025_265)]`
-- [ ] Verify floating game-cards visual (float keyframes + 100% badge); add mobile
+- [x] PublicLayout nav: `md:px-28` (=112px) desktop, `px-5` (20px) mobile; logo
+  `text-[21px]` brand `tracking-[-0.02em]`; Register button accent `px-[22px] py-2.5
+  text-[15px] rounded-[7px]`
+- [x] Hero container `md:px-28`; tagline 600/11px uppercase amber `tracking-[0.18em]
+  mb-7` (desktop plain text; mobile = badge pill)
+- [x] H1 `md:text-[68px] leading-[1.03] tracking-[-0.03em] md:mb-[26px]`, "actually"
+  span amber; mobile `text-[44px]`
+- [x] Body `md:text-[18px] md:leading-[1.65] max-w-[390px] md:mb-12`; mobile 15px/1.6,
+  second sentence hidden `< md`
+- [x] CTAs `md:gap-3.5`: "Get started" amber (lg size = `px-10 py-4`, `flex-1` on
+  mobile), "Sign in" outline
+- [x] Verify floating game-cards visual (float keyframes + 100% badge); added mobile
   rotated card-fan
-- [ ] Mobile: add amber tagline badge (`bg-[oklch(76%_0.19_55/0.10)]` border pill)
+- [x] Mobile: added amber tagline badge (`bg-brand/10` border pill)
 
 ### P2. Auth entry: Register (02) + Sign In (03)
 Files: `components/auth/AuthBrandPanel.jsx`, `pages/RegisterPage.jsx`,
 `pages/LoginPage.jsx`, `components/ui/Input.jsx`, `components/ui/Field.jsx`
-- [ ] AuthBrandPanel: `w-[496px]`; dot-grid `opacity-[0.03]`; "Hundo" `text-[28px]`;
-  tagline/desc `text-[14px]`; spines `w-[36px] h-[52px] rounded-[5px]` with amber ✓
-- [ ] Add mobile brand-mark variant (76px ring + "H" 28px + "Built for completionists.")
-  shown above form `< lg`
-- [ ] Input primitive padding `px-4 py-3.5` (14px/16px)
-- [ ] Form panels: heading `text-[38px]` (mobile 32px), sub `text-[15px] mb-[40px]`;
-  field rhythm email `mb-[22px]`, password `mb-[34px]`, button `mb-[26px]`
-- [ ] Exact copy: "Create account" / "Join and start building your library.";
+- [x] AuthBrandPanel: `w-[496px]`; dot-grid `opacity-[0.03]`; ring `thickness={9}
+  labelSize={46}`; "Hundo" `text-[28px]`; tagline/desc `text-[14px]`; spines `w-9
+  h-[52px] rounded-[5px]` with amber ✓
+- [x] Added `AuthBrandMark.jsx` mobile variant (76px ring `thickness={5} labelSize={28}`
+  + "Built for completionists.") shown above form `< lg` in both pages
+- [x] Input primitive padding `px-4 py-3.5` (14/16px), `rounded-[9px] text-[15px]`
+- [x] Added optional `labelSize` prop to `CompletionRing` (backward-compatible) so the
+  brand "H" hits design sizes
+- [x] Form panels: heading `text-[32px] md:text-[38px]` `tracking-[-0.028em]`, sub
+  `text-[14px] md:text-[15px]`; field rhythm email `mb-4 md:mb-[22px]`, password
+  `mb-7 md:mb-[34px]`, footer `mt-[22px] md:mt-[26px]`; mobile top-aligned layout
+- [x] Exact copy: "Create account" / "Join and start building your library.";
   "Welcome back." / "Sign in to continue your journey."
-- [ ] Login password row keeps right-aligned "Forgot password?" (mobile "Forgot?");
+- [x] Login password row right-aligned "Forgot password?" (mobile "Forgot?");
   footer links accent
 
 ### P3. Auth status screens (07/08/09/11/12/13)

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiFetch } from '../lib/api.js';
 import AuthBrandPanel from '../components/auth/AuthBrandPanel.jsx';
+import AuthBrandMark from '../components/auth/AuthBrandMark.jsx';
 import Field from '../components/ui/Field.jsx';
 import Input from '../components/ui/Input.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -61,87 +62,91 @@ export default function LoginPage() {
   return (
     <div className="flex-1 flex">
       <AuthBrandPanel />
-      <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
+      <div className="flex-1 flex flex-col relative">
         <div className="absolute inset-0 dot-grid pointer-events-none" />
-        <div className="relative z-10 w-full max-w-md">
-          <h1 className="text-3xl md:text-[38px] font-bold tracking-tight mb-2">
-            Welcome back.
-          </h1>
-          <p className="text-content-muted mb-10">
-            Sign in to continue your journey.
-          </p>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            className="space-y-5"
-          >
-            <Field label="Email" error={errors.email?.message}>
-              <Input
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-              />
-            </Field>
+        <AuthBrandMark />
+        <div className="relative z-10 flex-1 flex flex-col lg:items-center lg:justify-center px-6 pb-8 lg:py-12">
+          <div className="w-full max-w-md">
+            <h1 className="text-[32px] md:text-[38px] font-bold tracking-[-0.028em] mb-1.5 md:mb-2">
+              Welcome back.
+            </h1>
+            <p className="text-[14px] md:text-[15px] text-content-muted mb-7 md:mb-10">
+              Sign in to continue your journey.
+            </p>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <Field
+                label="Email"
+                error={errors.email?.message}
+                className="mb-4 md:mb-[22px]"
+              >
+                <Input
+                  {...register('email')}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                />
+              </Field>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[13px] font-medium text-content-muted">
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-accent hover:text-accent-hover"
-                >
-                  Forgot password?
-                </Link>
+              <div className="mb-7 md:mb-[34px]">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[13px] font-medium text-content-muted">
+                    Password
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-accent hover:text-accent-hover"
+                  >
+                    <span className="lg:hidden">Forgot?</span>
+                    <span className="hidden lg:inline">Forgot password?</span>
+                  </Link>
+                </div>
+                <Input
+                  {...register('password')}
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-400">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
-              <Input
-                {...register('password')}
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-400">
-                  {errors.password.message}
-                </p>
+
+              {errors.root && (
+                <p className="text-red-400 text-sm mb-4">{errors.root.message}</p>
               )}
-            </div>
 
-            {errors.root && (
-              <p className="text-red-400 text-sm">{errors.root.message}</p>
-            )}
+              {unverifiedEmail && (
+                <div className="mb-4 rounded-lg border border-[oklch(76%_0.19_55_/_0.35)] bg-[oklch(76%_0.19_55_/_0.1)] p-3 text-sm">
+                  <p className="text-brand mb-2">
+                    Please verify your email before signing in.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={resending}
+                    className="text-accent hover:text-accent-hover disabled:opacity-50"
+                  >
+                    {resending ? 'Resending…' : 'Resend verification email'}
+                  </button>
+                </div>
+              )}
 
-            {unverifiedEmail && (
-              <div className="rounded-lg border border-[oklch(76%_0.19_55_/_0.35)] bg-[oklch(76%_0.19_55_/_0.1)] p-3 text-sm">
-                <p className="text-brand mb-2">
-                  Please verify your email before signing in.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resending}
-                  className="text-accent hover:text-accent-hover disabled:opacity-50"
-                >
-                  {resending ? 'Resending…' : 'Resend verification email'}
-                </button>
-              </div>
-            )}
-
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
-            </Button>
-          </form>
-          <p className="text-content-subtle text-sm mt-6 text-center">
-            Don&apos;t have an account?{' '}
-            <Link
-              to="/register"
-              className="text-accent hover:text-accent-hover font-medium"
-            >
-              Register
-            </Link>
-          </p>
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? 'Signing in…' : 'Sign in'}
+              </Button>
+            </form>
+            <p className="text-content-subtle text-sm mt-[22px] md:mt-[26px] text-center">
+              Don&apos;t have an account?{' '}
+              <Link
+                to="/register"
+                className="text-accent hover:text-accent-hover font-medium"
+              >
+                Register
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

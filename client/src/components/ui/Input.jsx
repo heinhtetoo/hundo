@@ -5,7 +5,7 @@ const Input = forwardRef(function Input({ className = '', ...props }, ref) {
     <input
       ref={ref}
       className={[
-        'w-full box-border px-4 py-3 rounded-lg',
+        'w-full box-border px-4 py-3.5 rounded-[9px] text-[15px]',
         'bg-surface-input text-content border border-edge',
         'transition-colors',
         className,
