@@ -9,6 +9,7 @@ import AuthBrandPanel from '../components/auth/AuthBrandPanel.jsx';
 import AuthBrandMark from '../components/auth/AuthBrandMark.jsx';
 import AuthScreen from '../components/auth/AuthScreen.jsx';
 import IconBadge from '../components/auth/IconBadge.jsx';
+import StepIndicator from '../components/auth/StepIndicator.jsx';
 import Field from '../components/ui/Field.jsx';
 import Input from '../components/ui/Input.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -52,47 +53,46 @@ export default function RegisterPage() {
 
   if (pendingEmail) {
     return (
-      <AuthScreen>
-        <IconBadge>
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="m3 7 9 6 9-6" />
+      <AuthScreen maxWidthClass="max-w-[480px]" gapClass="gap-8">
+        <StepIndicator states={['done', 'active', 'pending']} />
+        <IconBadge size={108}>
+          <svg width="48" height="38" viewBox="0 0 48 38" fill="none" stroke="currentColor">
+            <rect x="1" y="1" width="46" height="36" rx="6" strokeWidth="2" />
+            <path
+              d="M1 9L24 25L47 9"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </IconBadge>
-        <div>
-          <h1 className="text-3xl font-bold mb-3">Check your inbox</h1>
-          <p className="text-content-muted">
+        <div className="flex flex-col gap-3.5">
+          <h1 className="text-[34px] md:text-[46px] font-bold tracking-[-0.03em]">
+            Check your inbox
+          </h1>
+          <p className="text-[15px] md:text-[17px] leading-[1.65] text-content-muted">
             We sent a verification link to{' '}
-            <span className="text-content font-medium">{pendingEmail}</span>.
-          </p>
-          <p className="text-content-muted mt-2">
-            Click the link in the email to verify your account, then{' '}
-            <Link
-              to="/login"
-              className="text-accent hover:text-accent-hover font-medium"
-            >
+            <span className="text-content font-semibold">{pendingEmail}</span>.
+            <br />
+            Click the link to verify your account, then{' '}
+            <Link to="/login" className="text-accent hover:text-accent-hover">
               sign in
             </Link>
             .
           </p>
         </div>
-        <p className="text-content-subtle text-sm">
-          Didn&apos;t receive it?{' '}
-          <button
-            onClick={handleResend}
-            disabled={resending}
-            className="text-accent hover:text-accent-hover disabled:opacity-50"
-          >
-            {resending ? 'Resending…' : 'Resend verification email'}
-          </button>
-        </p>
+        <div className="rounded-[10px] border border-edge bg-surface-card px-7 py-[15px]">
+          <p className="text-sm text-content-subtle">
+            Didn&apos;t receive it?{' '}
+            <button
+              onClick={handleResend}
+              disabled={resending}
+              className="text-accent hover:text-accent-hover font-medium disabled:opacity-50"
+            >
+              {resending ? 'Resending…' : 'Resend verification email'}
+            </button>
+          </p>
+        </div>
       </AuthScreen>
     );
   }

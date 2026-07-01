@@ -488,31 +488,32 @@ Files: `components/auth/AuthBrandPanel.jsx`, `pages/RegisterPage.jsx`,
 Files: new `components/auth/StepIndicator.jsx`; `pages/RegisterPage.jsx` (pending),
 `pages/VerifyEmailPage.jsx` (idle/success/error), `pages/ForgotPasswordPage.jsx`
 (form + sent), `pages/ResetPasswordPage.jsx`; reuse `AuthScreen`/`IconBadge`/`CompletionRing`
-- [ ] `StepIndicator` (new): 3 steps Create → Verify → Sign in, states complete✓/active/
-  pending + connectors; compact on mobile
-- [ ] 07 Check your inbox (Register pending): step indicator; 108px envelope badge;
-  heading `text-[46px]` (mobile 34px); target email bold; resend inside bordered box
-- [ ] 08 Verify your email (VerifyEmail idle): step indicator (1–2 done); icon ring +
-  heading + real "Verify my account" button styled to match; "Link expires in 24
-  hours · Resend" footer. **Skip the email-preview card**
-- [ ] 09 Email verified (success): all-complete step indicator; 168px (mobile 140px)
-  360° amber ring + centred check; confetti dots; heading `text-[48px]` (mobile 38px);
-  body "…Start building your backlog and tracking every completion."; button "Sign in
-  to Hundo →"
-- [ ] 11 Link expired (error): 128px (mobile 108px) partial error ring `oklch(52% 0.22
-  25)` + alert glyph + error glow; heading `text-[44px]`; resend form horizontal on
-  desktop (`flex-row gap-2.5`, input `flex-1`, button `shrink-0`), stacked on mobile;
-  "← Back to sign in"
-- [ ] 12 Forgot password: 96px (mobile 80px) lock badge w/ layered shadow rings;
-  heading `text-[44px]` (mobile 34px, `<br>`); form **card** (`bg-[oklch(9.5%_0.022_265)]`
-  border `rounded-2xl p-8`/`p-6`, shadow) w/ uppercase "Email address" label; "Send
-  reset link"; "Remember your password? Sign in"
-- [ ] 13 Reset link sent (ForgotPassword submitted): 108px (mobile 88px) envelope badge
-  + overlaid amber ✓; heading "Check your inbox" `text-[46px]`; email bold; **info
-  card** (glowing dot + "Link expires in 1 hour" bold; divider; "Didn't receive it?
-  Check your spam folder, or resend the link."); "← Back to sign in"
-- [ ] Reset-password form (no design screen): keep functional, restyle to the
-  forgot-password card language for consistency
+- [x] `StepIndicator.jsx` (new): 3 steps Register → Verify email → Sign in, per-step
+  states done✓/active/pending + connectors (amber / amber→grey gradient / grey)
+- [x] Parameterised `AuthScreen` (`maxWidthClass`/`gapClass`/`glowColor`/`glowSize`/
+  `decor`) and `IconBadge` (`size`/`corner`) for the varied status layouts
+- [x] 07 Check your inbox (Register pending): step indicator `['done','active',
+  'pending']`; 108px envelope badge; heading `md:text-[46px]` (mobile 34px); email
+  bold; resend inside bordered box
+- [x] 08 Verify your email (VerifyEmail idle): step indicator; 108px envelope badge +
+  heading + real "Verify my account" button; "Link expires in 24 hours" footer.
+  **Email-preview card skipped** per decision
+- [x] 09 Email verified (success): all-done-ish step indicator `['done','done',
+  'active']`; 168px 360° amber ring + centred check + 2 decorative rings; confetti via
+  `decor`; heading `md:text-[48px]`; button "Sign in to Hundo →" w/ glow
+- [x] 11 Link expired (error): 128px partial error ring `oklch(52% 0.22 25)` + alert
+  glyph + red glow; heading `md:text-[44px]`; resend form `flex-col sm:flex-row gap-2.5`
+  (input `sm:flex-1`, button `shrink-0`); "← Back to sign in"
+- [x] 12 Forgot password: 96px lock IconBadge (layered shadow rings); heading
+  `md:text-[44px]`; form **card** (`bg-[oklch(9.5%_0.022_265)]` border `rounded-2xl
+  p-6 md:p-8`, shadow) w/ uppercase "Email address" label; "Send reset link";
+  "Remember your password? Sign in"
+- [x] 13 Reset link sent (ForgotPassword submitted): 108px envelope IconBadge +
+  `corner` amber ✓ badge; heading "Check your inbox" `md:text-[46px]`; email bold;
+  **info card** (glowing dot + "Link expires in 1 hour" bold; divider; spam/resend
+  line wired to re-request); "← Back to sign in"
+- [x] Reset-password form (no design screen): restyled to the forgot-password card
+  language; success reuses the 168px ring, error reuses the error ring
 
 ### P4. Backlog (design 05)
 Files: `pages/BacklogPage.jsx`, `components/GameCard.jsx` (extract
