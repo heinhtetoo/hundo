@@ -412,3 +412,171 @@ changes; server tests stay green.
   Add `created_at` to the login response `SELECT` + returned user (and `/refresh`
   for consistency) so `AuthContext` has it immediately; keep auth tests green
   (96/96)
+
+## Phase 18 — Pixel-Match Rework (exact copy of the design, pair-by-pair)
+
+Phase 17 re-skinned everything (shipped as PR #1) but the live screens still
+diverge from the design — pixels in places, whole missing sections in others.
+Rework each screen **pair (desktop + mobile) at a time** into an exact copy.
+Presentation only; no backend/API/behaviour changes; server tests stay green.
+
+### Design source
+- Claude Design project `298c6232-b112-4b89-970a-b7104198b113` ("Hundo site polish"):
+  `Hundo Screens.dc.html` (desktop, 13 screens) + `Hundo Screens Mobile.dc.html`
+  (mobile, same 13). Split per-screen snippets live in the session scratchpad
+  (`desktop-NN-*.html` / `mobile-NN-*.html`); re-fetch via DesignSync `get_file` if
+  gone. The HTML is the pixel-level truth — copy exact oklch values, px sizes, copy.
+
+### Locked decisions (from grilling)
+- **Real data only.** Build every section derivable from existing data (entries +
+  RAWG + `/stats`); substitute an honest equivalent where the design shows data we
+  don't have. No backend, migrations, or new tests.
+- **Omit the Achievements block** on the Profile sidebar (keep Top Genres + Currently
+  Playing). Do not fake achievements.
+- **Verify screens: faithful, skip the email-preview card.** Keep the 3-step wizard
+  (Create → Verify → Sign in), confetti on success, all colours/rings/copy/spacing,
+  and the real "Verify my account" button styled to match. Skip only the fake in-app
+  email-preview card on screen 08.
+
+### Global conventions (every phase)
+- **Skip mobile-mockup chrome** — the fake iOS status bar (9:41, signal/battery) and
+  phone-frame corners/shadow are canvas artifacts; do NOT reproduce them. Do the
+  mobile *content* reflow via real Tailwind breakpoints.
+- Prefer semantic token classes; drop to arbitrary `[oklch(...)]` / `[NNpx]` only to
+  hit an exact design value the tokens don't cover.
+- No behaviour/logic changes (forms, queries, auth, routing) — restyle only.
+- Keep files < 300 lines; extract a component when a section grows.
+- One commit per phase (ask first); no Co-Authored-By; Australian English in copy.
+
+### P1. Landing (design 01) + shared public shell
+Files: `components/PublicLayout.jsx`, `pages/LandingPage.jsx`
+- [ ] PublicLayout nav: `px-[112px]` desktop; logo 700/21px brand; "Sign in" link
+  `oklch(57% 0.014 265)`; Register button accent `px-[22px] py-2.5 text-[15px] rounded-lg`
+- [ ] Hero container `px-[112px]`; tagline 600/11px uppercase amber `tracking-[0.18em]
+  mb-[28px]`
+- [ ] H1 `text-[68px] leading-[1.03] tracking-[-0.03em] mb-[26px]`, "actually" span
+  amber; mobile `text-[44px]`
+- [ ] Body `text-[18px] leading-[1.65] max-w-[390px] mb-[48px]`; mobile 15px/1.6
+- [ ] CTAs `gap-[14px]`: "Get started" amber (`px-[40px] py-[16px]`), "Sign in" outline
+  `border-[oklch(22%_0.025_265)]`
+- [ ] Verify floating game-cards visual (float keyframes + 100% badge); add mobile
+  rotated card-fan
+- [ ] Mobile: add amber tagline badge (`bg-[oklch(76%_0.19_55/0.10)]` border pill)
+
+### P2. Auth entry: Register (02) + Sign In (03)
+Files: `components/auth/AuthBrandPanel.jsx`, `pages/RegisterPage.jsx`,
+`pages/LoginPage.jsx`, `components/ui/Input.jsx`, `components/ui/Field.jsx`
+- [ ] AuthBrandPanel: `w-[496px]`; dot-grid `opacity-[0.03]`; "Hundo" `text-[28px]`;
+  tagline/desc `text-[14px]`; spines `w-[36px] h-[52px] rounded-[5px]` with amber ✓
+- [ ] Add mobile brand-mark variant (76px ring + "H" 28px + "Built for completionists.")
+  shown above form `< lg`
+- [ ] Input primitive padding `px-4 py-3.5` (14px/16px)
+- [ ] Form panels: heading `text-[38px]` (mobile 32px), sub `text-[15px] mb-[40px]`;
+  field rhythm email `mb-[22px]`, password `mb-[34px]`, button `mb-[26px]`
+- [ ] Exact copy: "Create account" / "Join and start building your library.";
+  "Welcome back." / "Sign in to continue your journey."
+- [ ] Login password row keeps right-aligned "Forgot password?" (mobile "Forgot?");
+  footer links accent
+
+### P3. Auth status screens (07/08/09/11/12/13)
+Files: new `components/auth/StepIndicator.jsx`; `pages/RegisterPage.jsx` (pending),
+`pages/VerifyEmailPage.jsx` (idle/success/error), `pages/ForgotPasswordPage.jsx`
+(form + sent), `pages/ResetPasswordPage.jsx`; reuse `AuthScreen`/`IconBadge`/`CompletionRing`
+- [ ] `StepIndicator` (new): 3 steps Create → Verify → Sign in, states complete✓/active/
+  pending + connectors; compact on mobile
+- [ ] 07 Check your inbox (Register pending): step indicator; 108px envelope badge;
+  heading `text-[46px]` (mobile 34px); target email bold; resend inside bordered box
+- [ ] 08 Verify your email (VerifyEmail idle): step indicator (1–2 done); icon ring +
+  heading + real "Verify my account" button styled to match; "Link expires in 24
+  hours · Resend" footer. **Skip the email-preview card**
+- [ ] 09 Email verified (success): all-complete step indicator; 168px (mobile 140px)
+  360° amber ring + centred check; confetti dots; heading `text-[48px]` (mobile 38px);
+  body "…Start building your backlog and tracking every completion."; button "Sign in
+  to Hundo →"
+- [ ] 11 Link expired (error): 128px (mobile 108px) partial error ring `oklch(52% 0.22
+  25)` + alert glyph + error glow; heading `text-[44px]`; resend form horizontal on
+  desktop (`flex-row gap-2.5`, input `flex-1`, button `shrink-0`), stacked on mobile;
+  "← Back to sign in"
+- [ ] 12 Forgot password: 96px (mobile 80px) lock badge w/ layered shadow rings;
+  heading `text-[44px]` (mobile 34px, `<br>`); form **card** (`bg-[oklch(9.5%_0.022_265)]`
+  border `rounded-2xl p-8`/`p-6`, shadow) w/ uppercase "Email address" label; "Send
+  reset link"; "Remember your password? Sign in"
+- [ ] 13 Reset link sent (ForgotPassword submitted): 108px (mobile 88px) envelope badge
+  + overlaid amber ✓; heading "Check your inbox" `text-[46px]`; email bold; **info
+  card** (glowing dot + "Link expires in 1 hour" bold; divider; "Didn't receive it?
+  Check your spam folder, or resend the link."); "← Back to sign in"
+- [ ] Reset-password form (no design screen): keep functional, restyle to the
+  forgot-password card language for consistency
+
+### P4. Backlog (design 05)
+Files: `pages/BacklogPage.jsx`, `components/GameCard.jsx` (extract
+`BacklogSidebar.jsx` / `NowPlayingCard.jsx` if > 300 lines)
+- [ ] Sidebar (`w-[252px]`): CompletionRing 110px + "NN% DONE"; stats "N Games | Nh
+  Played" (700/18px); Status list with 7px colour dots + right-aligned counts; **Top
+  Genres** (aggregate entry genres, top 4 + count + 2px gradient bar); "+ Add a game"
+  amber button
+- [ ] Main: filter pills with inline counts + search + sort; grid/list toggle as a
+  visual control (simple local view state; list view basic/optional)
+- [ ] Sections in order: **Now Playing** (2-col featured cards), **Completed** (4-col),
+  **Backlog** (4-col + dashed "Add game" ghost card)
+- [ ] GameCard `featured` variant (120px hero, title overlay, "PLAYING" badge w/ purple
+  glow, hours, **no progress bar**, "Update" button) + `compact` grid variant (72px
+  cover, 100% badge when completed, title, year·genre, ★rating + hours or status pill)
+- [ ] Mobile: pills with counts, 2-col grids, bottom tab bar (via AppLayout)
+
+### P5. Game Details (design 06)
+Files: `pages/GameDetailPage.jsx`, `components/BacklogEntryForm.jsx`,
+`components/GameScreenshots.jsx`, `components/ui/RatingBar.jsx`
+- [ ] Hero (300px): layered background — base 135° gradient
+  (`oklch(10% 0.06 25)→…→oklch(12% 0.05 240)`), texture repeating-linear-gradient, SVG
+  noise `opacity-0.18`, right radial glow, 160px bottom fade, 520px left wash; over
+  real RAWG art when present
+- [ ] Hero content: breadcrumb; title `text-[52px]` + year + inline "100% COMPLETED"
+  pill; tag pills + divider + Metacritic badge + RAWG "★ x / 5"
+- [ ] Details grid: force 2-col all breakpoints, all 6 cells always rendered (Developer,
+  Publisher, Released, ESRB, Avg Playtime, Website), 1px gaps, `bg-[oklch(9.5%_0.02_265)]`
+  cells `p-[13px_16px]`, uppercase 10px labels
+- [ ] Screenshots: `grid-cols-3` on desktop
+- [ ] Your Entry card: header + mini 38px ring (only when completed); segmented 2×2
+  status control (`gap-[5px]`, selected amber-tinted); RatingBar; Hours input with
+  absolute "hrs" suffix + helper "Avg for this game: Nh — you beat it by Xh" (derive
+  from RAWG playtime vs hours); Notes + counter; "Save changes" + "Remove"
+- [ ] Mobile: hero + single column; keep design's mobile section tabs (Your Entry /
+  Overview / Media) if low-cost, else stack
+
+### P6. Discover (design 10)
+Files: `pages/DiscoverPage.jsx`, `components/GameCard.jsx` (browse variant),
+`components/Navbar.jsx`
+- [ ] Header: "Discover" 700/30px + **real** count label (from API results, not the
+  mock "10,000+"); category pills — active `font-semibold` amber-fill, inactive
+  `border border-edge`; secondary filter row + result count + "Clear filters" link
+- [ ] Grid: lock to 5-col desktop (`grid-cols-2 lg:grid-cols-5 gap-[14px]`)
+- [ ] Browse GameCard: 3/2 aspect art, top-right rating badge (RAWG rating, green),
+  top-left platform badge, bottom-right "+ Add" amber button, title + year·genre meta
+- [ ] Navbar search placeholder "Search for a game…"
+
+### P7. Profile (design 04)
+Files: `pages/ProfilePage.jsx` (extract `ProfileSidebar.jsx` if needed),
+`components/ui/CompletionRing.jsx`, `components/GameCard.jsx`
+- [ ] Hero: `md:gap-[52px]`; 108px avatar conic ring + initials; identity = display
+  name from email + tier badge (from completion %) + "Member since <Month YYYY>"
+  (**no @handle, bio, or online dot**); 4 stat tiles (N games / Nh played / ★ avg /
+  top-genre fan), star tile amber
+- [ ] Completion donut: CompletionRing `size=122` + "complete"; Done / Playing /
+  Backlog counts inline with 1px dividers (700/17px numbers, 400/10px labels)
+- [ ] Library: filter pills with counts (All/Completed/Playing/Backlog); grid
+  `lg:grid-cols-3`; reuse P4 compact GameCard
+- [ ] Right sidebar (`w-[264px]`, hidden on mobile): **Top Genres** bars + **Currently
+  Playing** cards (real, status=playing). **Achievements block omitted**
+- [ ] Mobile: stacked hero, small donut, stat-chip row, filter tabs, 2-col library grid
+
+### Verify (per phase + final)
+- [ ] Each phase: `cd client && npm run build` — clean build
+- [ ] Each phase: reuse the one-off Playwright screenshot script (mock API, cached
+  headless-shell) to shoot the phase route(s) at **1440px** and **390px**; compare
+  PNGs to the matching `desktop-NN-*.html` / `mobile-NN-*.html`; confirm
+  fonts/colours/spacing/copy match and no console errors (not committed)
+- [ ] After form-adjacent phases: confirm RHF still populates/resets (forwardRef fix
+  intact) — probe hours/notes values render
+- [ ] Final: full 14-route (7 pairs) screenshot pass + `cd server && npm test` green
+  (untouched, sanity only)
