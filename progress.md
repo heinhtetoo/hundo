@@ -557,13 +557,15 @@ Files: `pages/GameDetailPage.jsx`, `components/BacklogEntryForm.jsx`,
 ### P6. Discover (design 10)
 Files: `pages/DiscoverPage.jsx`, `components/GameCard.jsx` (browse variant),
 `components/Navbar.jsx`
-- [ ] Header: "Discover" 700/30px + **real** count label (from API results, not the
-  mock "10,000+"); category pills — active `font-semibold` amber-fill, inactive
-  `border border-edge`; secondary filter row + result count + "Clear filters" link
-- [ ] Grid: lock to 5-col desktop (`grid-cols-2 lg:grid-cols-5 gap-[14px]`)
-- [ ] Browse GameCard: 3/2 aspect art, top-right rating badge (RAWG rating, green),
-  top-left platform badge, bottom-right "+ Add" amber button, title + year·genre meta
-- [ ] Navbar search placeholder "Search for a game…"
+- [x] Header: "Discover" `text-[30px]` + **real** count (`N+ games` from loaded
+  results, not the mock "10,000+"); category pills — active `font-semibold` amber-fill,
+  inactive `border border-edge`; secondary filter row (selects + order + `N+ results`)
+  with a bottom border + "Clear filters" (shown only when filters differ from default)
+- [x] Grid: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5`
+- [x] Browse GameCard variant: 3/2 aspect art, top-right green score badge (metacritic
+  else RAWG rating), top-left platform badge ("Multi" when >1), bottom-right "+ Add"
+  amber button (appears on hover), title + "year · genre" meta
+- [x] Navbar search placeholder "Search for a game…"
 
 ### P7. Profile (design 04)
 Files: `pages/ProfilePage.jsx` (extract `ProfileSidebar.jsx` if needed),

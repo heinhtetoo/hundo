@@ -80,7 +80,7 @@ export default function Navbar() {
         </svg>
         <input
           type="text"
-          placeholder="Search games to add…"
+          placeholder="Search for a game…"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

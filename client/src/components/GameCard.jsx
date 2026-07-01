@@ -108,17 +108,38 @@ function CompactCard({ entry }) {
 
 function BrowseCard({ game }) {
   const year = game.released ? game.released.slice(0, 4) : null;
+  const genre = game.genres?.[0]?.name;
+  const platform =
+    game.platforms?.length > 1 ? 'Multi' : game.platforms?.[0]?.name;
+  const score =
+    game.metacritic ?? (game.rating ? Number(game.rating).toFixed(1) : null);
+  const meta = [year, genre].filter(Boolean).join(' · ');
   return (
     <Link
       to={`/games/${game.id}`}
-      className="group block bg-surface-card border border-edge rounded-xl
+      className="group block bg-surface-card border border-edge rounded-[10px]
                  overflow-hidden transition-all hover:-translate-y-0.5
-                 hover:border-[oklch(76%_0.19_55_/_0.4)]"
+                 hover:border-[oklch(76%_0.19_55_/_0.3)]
+                 hover:shadow-[0_12px_36px_rgba(0,0,0,0.7)]"
     >
-      <Hero cover={game.background_image} seed={game.id} className="aspect-[16/10]" />
-      <div className="p-3">
-        <h3 className="font-medium text-content text-sm line-clamp-1">{game.name}</h3>
-        {year && <p className="text-xs text-content-subtle mt-1">{year}</p>}
+      <Hero cover={game.background_image} seed={game.id} className="aspect-[3/2]">
+        {score != null && (
+          <span className="absolute top-[7px] right-[7px] rounded-[5px] border border-[oklch(62%_0.20_145_/_0.45)] bg-[oklch(56%_0.20_145_/_0.2)] px-2 py-0.5 text-[11px] font-bold text-[oklch(72%_0.18_145)]">
+            {score}
+          </span>
+        )}
+        {platform && (
+          <span className="absolute top-[7px] left-[7px] rounded-[5px] border border-white/[0.14] bg-white/[0.08] px-2 py-0.5 text-[10px] font-medium text-white/50">
+            {platform}
+          </span>
+        )}
+        <span className="absolute bottom-2 right-2 rounded-md bg-brand px-3 py-1 text-[11px] font-semibold text-brand-ink opacity-0 group-hover:opacity-100 transition-opacity">
+          + Add
+        </span>
+      </Hero>
+      <div className="px-3 py-2.5">
+        <p className="text-[13px] font-semibold text-content truncate">{game.name}</p>
+        {meta && <p className="text-[11px] text-content-subtle mt-0.5">{meta}</p>}
       </div>
     </Link>
   );
