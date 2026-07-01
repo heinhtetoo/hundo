@@ -570,25 +570,26 @@ Files: `pages/DiscoverPage.jsx`, `components/GameCard.jsx` (browse variant),
 ### P7. Profile (design 04)
 Files: `pages/ProfilePage.jsx` (extract `ProfileSidebar.jsx` if needed),
 `components/ui/CompletionRing.jsx`, `components/GameCard.jsx`
-- [ ] Hero: `md:gap-[52px]`; 108px avatar conic ring + initials; identity = display
+- [x] Hero: `md:gap-[52px]`; 108px avatar conic ring + initials; identity = display
   name from email + tier badge (from completion %) + "Member since <Month YYYY>"
-  (**no @handle, bio, or online dot**); 4 stat tiles (N games / Nh played / ★ avg /
-  top-genre fan), star tile amber
-- [ ] Completion donut: CompletionRing `size=122` + "complete"; Done / Playing /
-  Backlog counts inline with 1px dividers (700/17px numbers, 400/10px labels)
-- [ ] Library: filter pills with counts (All/Completed/Playing/Backlog); grid
-  `lg:grid-cols-3`; reuse P4 compact GameCard
-- [ ] Right sidebar (`w-[264px]`, hidden on mobile): **Top Genres** bars + **Currently
-  Playing** cards (real, status=playing). **Achievements block omitted**
-- [ ] Mobile: stacked hero, small donut, stat-chip row, filter tabs, 2-col library grid
+  (**no @handle, bio, or online dot** — real-data-only); 4 stat tiles (rounded-full,
+  star tile amber)
+- [x] Completion donut: 122px conic ring + "complete"; Done/Playing/Backlog counts
+  inline with 1px dividers (700/17px numbers coloured brand/accent/muted)
+- [x] Library: "LIBRARY" label + filter pills with counts (rounded-md); grid
+  `grid-cols-2 sm:grid-cols-3`; reuse P4 compact GameCard
+- [x] `ProfileSidebar.jsx` (new, `w-[264px]`, hidden on mobile): **Top Genres** bars +
+  **Currently Playing** cards (real, status=playing). **Achievements block omitted**
+- [x] Mobile: stacked hero, centred donut + counts, stat-chip row, filter tabs, 2-col
+  library grid; sidebar hidden `< lg`
+- [x] NOTE: tier label is data-driven (COLLECTOR at 37.5%), not the mock "COMPLETIONIST+"
 
 ### Verify (per phase + final)
-- [ ] Each phase: `cd client && npm run build` — clean build
-- [ ] Each phase: reuse the one-off Playwright screenshot script (mock API, cached
-  headless-shell) to shoot the phase route(s) at **1440px** and **390px**; compare
-  PNGs to the matching `desktop-NN-*.html` / `mobile-NN-*.html`; confirm
-  fonts/colours/spacing/copy match and no console errors (not committed)
-- [ ] After form-adjacent phases: confirm RHF still populates/resets (forwardRef fix
-  intact) — probe hours/notes values render
-- [ ] Final: full 14-route (7 pairs) screenshot pass + `cd server && npm test` green
-  (untouched, sanity only)
+- [x] Each phase: `cd client && npm run build` — clean build (final bundle 391 kB)
+- [x] Each phase: one-off Playwright screenshots (mock API, cached headless-shell) at
+  **1440px** and **390px**, compared to the matching design snippets; no console errors
+  (not committed)
+- [x] Form-adjacent phases: RHF still populates/resets (forwardRef fix intact) — probed
+  Game Details hours=24.5 / notes render correctly
+- [x] Final: all 7 pairs screenshot-verified + `cd server && npm test` green (96/96,
+  untouched)
