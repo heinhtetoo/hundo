@@ -518,18 +518,22 @@ Files: new `components/auth/StepIndicator.jsx`; `pages/RegisterPage.jsx` (pendin
 ### P4. Backlog (design 05)
 Files: `pages/BacklogPage.jsx`, `components/GameCard.jsx` (extract
 `BacklogSidebar.jsx` / `NowPlayingCard.jsx` if > 300 lines)
-- [ ] Sidebar (`w-[252px]`): CompletionRing 110px + "NN% DONE"; stats "N Games | Nh
-  Played" (700/18px); Status list with 7px colour dots + right-aligned counts; **Top
-  Genres** (aggregate entry genres, top 4 + count + 2px gradient bar); "+ Add a game"
-  amber button
-- [ ] Main: filter pills with inline counts + search + sort; grid/list toggle as a
-  visual control (simple local view state; list view basic/optional)
-- [ ] Sections in order: **Now Playing** (2-col featured cards), **Completed** (4-col),
-  **Backlog** (4-col + dashed "Add game" ghost card)
-- [ ] GameCard `featured` variant (120px hero, title overlay, "PLAYING" badge w/ purple
-  glow, hours, **no progress bar**, "Update" button) + `compact` grid variant (72px
-  cover, 100% badge when completed, title, year·genre, ★rating + hours or status pill)
-- [ ] Mobile: pills with counts, 2-col grids, bottom tab bar (via AppLayout)
+- [x] `BacklogSidebar.jsx` (new, `w-[252px]`): CompletionRing 110px `thickness={11}` +
+  "NN% done"; stats "N Games | Nh Played"; Status list with 7px colour dots +
+  right-aligned counts; **Top Genres** from `stats.genreDistribution` (top 4 + count +
+  gradient bar); "+ Add a game" → /discover
+- [x] Main: filter pills (with inline counts on mobile) + search + sort + order toggle
+  + grid/list toggle (local `view` state; list = 1-col). Controls `hidden lg:flex`
+- [x] Sections grouped by status in order **Now Playing** (2-col featured) / Completed /
+  Backlog / Wishlist / Dropped (compact grids); Backlog gets the dashed "Add game" ghost
+- [x] GameCard refactored to variants: `featured` (90/120px hero, title overlay,
+  "PLAYING" badge, hours, **no progress bar**, "Update" btn), `compact` (72px cover,
+  100% badge when completed, title, ★rating + hours or "◦ status" pill), `browse`
+  (kept for Discover). Hashed gradient fallback when no cover; year·genre omitted
+  (not on entries — real-data-only)
+- [x] Mobile: pills with counts, 2-col grids incl. featured, bottom tab bar (AppLayout)
+- [x] NOTE: filter switched from multi-select to **single-select** (activeStatus) to
+  match the design's single active pill/sidebar highlight
 
 ### P5. Game Details (design 06)
 Files: `pages/GameDetailPage.jsx`, `components/BacklogEntryForm.jsx`,
