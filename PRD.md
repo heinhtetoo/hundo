@@ -57,7 +57,7 @@ Hundo is a multi-user, full-stack web application that gives each player a priva
 20. As a logged-in user, I want to write personal notes on a backlog entry, so that I can record thoughts, tips, or reminders for myself.
 21. As a logged-in user, I want to edit any field of a backlog entry after it has been created, so that I can keep my records up to date as I play.
 22. As a logged-in user, I want to delete a game from my backlog, so that I can remove entries I no longer care about.
-23. As a logged-in user, I want to filter my backlog by one or more statuses simultaneously, so that I can focus on a specific subset of my collection.
+23. As a logged-in user, I want to filter my backlog by status (All, or one status at a time), so that I can focus on a specific subset of my collection. (The Backlog view groups entries into status sections; the API still accepts multiple comma-separated statuses.)
 24. As a logged-in user, I want to search for a game by title within my backlog, so that I can quickly find a specific entry in a large collection.
 25. As a logged-in user, I want to sort my backlog by title, date added, rating, or hours played in ascending or descending order, so that I can view my collection in the order most useful to me at the time.
 
