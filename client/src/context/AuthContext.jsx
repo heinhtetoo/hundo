@@ -62,14 +62,17 @@ export function AuthProvider({ children }) {
     if (!res.ok) {
       throw new Error(data.error?.message ?? 'Registration failed');
     }
+    return data._verifyToken ?? null;
   }
 
   async function resendVerification(email) {
-    await apiFetch('/api/v1/auth/resend-verification', {
+    const res = await apiFetch('/api/v1/auth/resend-verification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
+    const data = await res.json();
+    return data._verifyToken ?? null;
   }
 
   async function requestPasswordReset(email) {
