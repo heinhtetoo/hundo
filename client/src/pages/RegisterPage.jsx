@@ -22,6 +22,7 @@ const schema = z.object({
 export default function RegisterPage() {
   const { register: registerUser, resendVerification } = useAuth();
   const [pendingEmail, setPendingEmail] = useState(null);
+  const [verifyToken, setVerifyToken] = useState(null);
   const [resending, setResending] = useState(false);
   const {
     register,
@@ -32,7 +33,8 @@ export default function RegisterPage() {
 
   async function onSubmit(data) {
     try {
-      await registerUser(data.email, data.password);
+      const token = await registerUser(data.email, data.password);
+      setVerifyToken(token);
       setPendingEmail(data.email);
     } catch (err) {
       setError('root', { message: err.message });
@@ -42,7 +44,8 @@ export default function RegisterPage() {
   async function handleResend() {
     setResending(true);
     try {
-      await resendVerification(pendingEmail);
+      const token = await resendVerification(pendingEmail);
+      if (token) setVerifyToken(token);
       toast.success('Verification email resent — check your inbox');
     } catch {
       toast.error('Failed to resend — please try again');
@@ -93,6 +96,21 @@ export default function RegisterPage() {
             </button>
           </p>
         </div>
+        {verifyToken && (
+          <div className="rounded-[10px] border border-[oklch(76%_0.19_55_/_0.28)] bg-brand/5 px-7 py-[15px]">
+            <p className="text-sm text-content-subtle">
+              <span className="font-semibold text-brand">Demo mode:</span> email
+              delivery is limited, so verify directly here —{' '}
+              <Link
+                to={`/verify-email?token=${verifyToken}`}
+                className="text-accent hover:text-accent-hover font-medium"
+              >
+                Verify now
+              </Link>
+              .
+            </p>
+          </div>
+        )}
       </AuthScreen>
     );
   }

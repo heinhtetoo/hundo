@@ -24,6 +24,11 @@ const {
 
 const router = Router();
 
+// Demo mode returns the verification token in the API response so testers and
+// recruiters can verify their account in-app, without a verified email domain.
+const EXPOSE_VERIFY_TOKEN =
+  process.env.NODE_ENV === 'test' || process.env.DEMO_MODE === 'true';
+
 router.post('/register', createAuthRateLimiter(), async (req, res, next) => {
   try {
     const parsed = registerSchema.safeParse(req.body);
@@ -49,7 +54,7 @@ router.post('/register', createAuthRateLimiter(), async (req, res, next) => {
     await sendVerificationEmail(email, link);
 
     const body = { message: 'Registration successful. Please check your inbox to verify your email.' };
-    if (process.env.NODE_ENV === 'test') body._verifyToken = raw;
+    if (EXPOSE_VERIFY_TOKEN) body._verifyToken = raw;
     res.status(201).json(body);
   } catch (err) {
     if (err.code === '23505') {
@@ -160,7 +165,7 @@ router.post('/resend-verification', createAuthRateLimiter(), async (req, res, ne
     }
 
     const body = { message: 'If that email address needs verification, we have sent a new link.' };
-    if (process.env.NODE_ENV === 'test' && verifyToken) body._verifyToken = verifyToken;
+    if (EXPOSE_VERIFY_TOKEN && verifyToken) body._verifyToken = verifyToken;
     res.json(body);
   } catch (err) {
     next(err);

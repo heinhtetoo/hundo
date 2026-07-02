@@ -1,12 +1,14 @@
 # Hundo — Project Progress
 
 ## Phase 1 — Project Scaffolding
+
 - [x] Initialise monorepo (root `package.json`, `client/`, `server/` directories)
 - [x] Create root `.gitignore` (covers Node, React, Docker, env files)
 - [x] Create `server/.env.example` documenting all required backend env vars
 - [x] Initialise git repository
 
 ## Phase 2 — Backend Foundation
+
 - [x] Initialise Express app (`server/`) with entry point, middleware, and router wiring
 - [x] Set up Docker Compose for local dev (postgres + backend services)
 - [x] Configure `pg` database connection pool
@@ -16,11 +18,13 @@
 - [x] Configure environment variable loading with `dotenv`
 
 ## Phase 3 — Database Migrations
+
 - [x] Migration: create `users` table
 - [x] Migration: create `games` table
 - [x] Migration: create `backlog_entries` table with status enum and FK constraints
 
 ## Phase 4 — Authentication (TDD)
+
 - [x] `POST /api/v1/auth/register` — register with email + password (bcrypt hash)
 - [x] `POST /api/v1/auth/login` — issue access token + refresh token in httpOnly cookies
 - [x] `POST /api/v1/auth/refresh` — rotate refresh token, issue new access token
@@ -30,10 +34,12 @@
 - [x] Zod validation schemas for all auth request bodies
 
 ## Phase 5 — Games API (TDD)
+
 - [x] `GET /api/v1/games/search?q=` — proxy search to RAWG, return trimmed payload
 - [x] `GET /api/v1/games/:rawgId` — fetch single game from RAWG (or local cache)
 
 ## Phase 6 — Backlog API (TDD)
+
 - [x] `POST /api/v1/backlog` — upsert game into `games` table, create backlog entry
 - [x] `GET /api/v1/backlog` — fetch authenticated user's entries (filter, search, sort)
 - [x] `PUT /api/v1/backlog/:id` — update entry fields (ownership enforced)
@@ -41,9 +47,11 @@
 - [x] Zod validation schemas for backlog request bodies
 
 ## Phase 7 — Stats API (TDD)
+
 - [x] `GET /api/v1/stats` — return status counts, genre distribution, completion rate, total hours, top-5 games
 
 ## Phase 8 — Testing Setup
+
 - [x] Configure Vitest + Supertest with a dedicated test database
 - [x] Auth route integration tests
 - [x] Auth middleware tests
@@ -52,6 +60,7 @@
 - [x] Stats route integration tests
 
 ## Phase 9 — Frontend Foundation
+
 - [x] Initialise React app in `client/` with Vite
 - [x] Configure Tailwind CSS
 - [x] Set up React Router v6 with all six routes
@@ -61,6 +70,7 @@
 - [x] Configure Vite dev proxy to backend
 
 ## Phase 10 — Frontend Pages & Components
+
 - [x] Landing page (`/`) — marketing/logged-out home
 - [x] Register page (`/register`) — React Hook Form + Zod
 - [x] Login page (`/login`) — React Hook Form + Zod
@@ -70,6 +80,7 @@
 - [x] Dashboard page (`/dashboard`) — four Recharts charts
 
 ## Phase 11 — Deployment
+
 - [x] Write `Dockerfile` for the Express backend
 - [x] Write production `docker-compose.yml` for OCI
 - [x] Configure GitHub Actions workflow (run Vitest → SSH deploy to OCI → Vercel auto-deploy)
@@ -81,6 +92,7 @@
 - [x] Fix Safari ITP cookie blocking via Vercel proxy rewrites (`/api/*` → OCI backend)
 
 ## Phase 12 — Polish
+
 - [x] Fix completion rate to exclude wishlist + backlog from denominator
 - [x] Add toast notifications (react-hot-toast) on save / add / delete
 - [x] Add inline delete confirmation to prevent accidental removals
@@ -88,6 +100,7 @@
 - [x] Fix dashboard top-rated chart title truncation
 
 ## Phase 13 — Session Resilience, Richer Detail, Engagement
+
 - [x] Add `apiFetch` wrapper with single-flight silent token refresh on 401
 - [x] Redirect to login on real expiry via `auth:expired` event (no manual refresh)
 - [x] Expand game detail: Metacritic, dev/publisher, ESRB, playtime, website
@@ -98,6 +111,7 @@
 ## Phase 14 — Multi-status Filter, User-defined Sort Order, PRD Sync
 
 ### Backlog filtering & sorting (to original PRD spec)
+
 - [x] Backend: parse `status` as comma-separated list, validate against `STATUSES`, filter via `be.status::text = ANY($n)` (`server/src/routes/backlog.js`)
 - [x] Backend: accept `order` param (asc/desc, whitelisted), fall back to `SORT_MAP` column default; keep `SORT_MAP` as the sort-column whitelist
 - [x] Frontend: multi-select status toggle buttons + `All` clear button (`client/src/pages/BacklogPage.jsx`)
@@ -105,6 +119,7 @@
 - [x] Tests: multi-status filter, invalid-status ignored, user-defined order asc/desc (`server/test/backlog.test.js`)
 
 ### PRD.md sync (approved edits)
+
 - [x] Point 1 (line 80): rewrite token-refresh to describe the actual `apiFetch` wrapper
 - [x] Point 2 (line 78): cookies `SameSite=Lax` + same-origin Vercel proxy (not `SameSite=None`)
 - [x] Point 3 (line 81): add `register`, `user`, `isLoading` to AuthContext exposed values
@@ -117,6 +132,7 @@
 - [x] Minor: note rate limiting skipped in test env; suite now at 64 tests
 
 ### Verify
+
 - [x] `npm test` (server) and `npm run build` (client) pass
 - [x] Manual: multi-status union, asc/desc flip, `All` clears; PRD internally consistent
 
@@ -125,10 +141,12 @@
 ### Part A — Email Verification
 
 #### A1. Database
+
 - [x] Migration: `ALTER users ADD email_verified boolean NOT NULL DEFAULT false`; backfill existing rows to `true` in the same migration (`server/migrations/`)
 - [x] Migration: `CREATE TABLE auth_tokens (id bigserial PK, user_id bigint FK→users ON DELETE CASCADE, type text NOT NULL, token_hash text NOT NULL, expires_at timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now())`; index `(user_id, type)` and `token_hash`
 
 #### A2. Backend — token + email libs
+
 - [x] `server/src/lib/authTokens.js` (new): `issueToken(userId, type)` — `crypto.randomBytes(32).toString('hex')`, store SHA-256 hash + expiry (delete any existing same-type row first), return the RAW token
 - [x] `server/src/lib/authTokens.js`: `consumeToken(rawToken, type)` — hash, look up, check expiry, delete on success, return `user_id` or `null`
 - [x] `server/src/lib/email.js` (new): generic `sendEmail({ to, subject, html })` + `sendVerificationEmail(to, link)`; transport via `EMAIL_PROVIDER` env — console.log in dev, no-op in `NODE_ENV=test`, Resend HTTPS in prod (single swappable send call)
@@ -136,6 +154,7 @@
 - [x] `server/.env.example`: add `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM`
 
 #### A3. Backend — auth routes (`server/src/routes/auth.js`)
+
 - [x] `POST /register`: create user (unverified), `issueToken('email_verify')`, send email with `${CLIENT_URL}/verify-email?token=<raw>`, return `201 { message }`, STOP setting cookies
 - [x] `POST /login`: after password check, if `!email_verified` return `403 { error: { code: 'EMAIL_NOT_VERIFIED' } }` before issuing cookies
 - [x] `POST /verify-email` (new): body `{ token }`; `consumeToken('email_verify')`, set `email_verified = true`; idempotent-friendly response
@@ -144,12 +163,14 @@
 - [x] `server/src/validation/authSchemas.js`: add `verifyEmailSchema` (`token`) + `resendSchema` (`email`)
 
 #### A4. Frontend
+
 - [x] `client/src/pages/RegisterPage.jsx`: on success show "Check your inbox" state (no auto-login) + resend button
 - [x] `client/src/pages/VerifyEmailPage.jsx` (new) + public route in `client/src/App.jsx`: read `?token=`, show "Verify my account" BUTTON (verify only on click, not page load), on success link to `/login`, handle expired/invalid with resend option
 - [x] `client/src/pages/LoginPage.jsx`: handle `EMAIL_NOT_VERIFIED` 403 — clear message + "resend verification email" action
 - [x] `client/src/context/AuthContext.jsx`: `register()` no longer expects a session; add `resendVerification(email)` helper (reuse `apiFetch`)
 
 #### A5. Tests (`server/test/auth.test.js`)
+
 - [x] register returns 201, no auth cookies, user is unverified
 - [x] login on unverified account returns 403 `EMAIL_NOT_VERIFIED`
 - [x] verify-email with valid token flips `email_verified` and login then succeeds
@@ -160,30 +181,36 @@
 ### Part B — Game Discovery (`/discover`)
 
 #### B1. Database
+
 - [x] Migration: `CREATE TABLE game_collections (slug text PRIMARY KEY, title text NOT NULL, payload jsonb NOT NULL, refreshed_at timestamptz NOT NULL DEFAULT now())` (separate from `games`)
 
 #### B2. Backend — RAWG client (`server/src/lib/rawg.js`)
+
 - [x] `listGames(params)`: forward `genres`, `platforms`, `dates`, `ordering`, `page`, `page_size` to RAWG `/games`; return the trimmed list shape used by search
 - [x] `getGenres()` / `getPlatforms()`: fetch RAWG reference lists for filter dropdowns
 
 #### B3. Backend — games routes (`server/src/routes/games.js`, behind `verifyToken`)
+
 - [x] `GET /discover`: 3 curated rows; lazy stale-while-revalidate vs `game_collections` (serve cached payload now; if a row >24h old refresh in background; keep last-good on RAWG failure). Rows: Top Rated (`ordering=-rating` + rating/metacritic floor), New & Recent (`dates=<90d ago>,<today>&ordering=-released`), Popular (`ordering=-added`)
 - [x] `GET /browse`: live filtered grid; params `genre`, `platform`, `year`, `sort`, `order`, `page`; whitelist `sort`/`order` with `SORT_MAP`-style guard (see `backlog.js`); pass through to `rawg.listGames`; return `{ results, hasNext }`
 - [x] `GET /genres` + `GET /platforms`: cached reference lists (reuse 24h cache approach)
 
 #### B4. Frontend
+
 - [x] Extract shared `client/src/components/GameCard.jsx` from `BacklogPage.jsx` (browse variant, no status/rating badge, links to `/games/:rawgId`)
 - [x] `client/src/pages/DiscoverPage.jsx` (new) + protected route in `App.jsx`: default = 3 curated carousels from `/discover`; on any filter set → grid mode via `useInfiniteQuery` on `/browse` with "Load more" button
 - [x] Filter pane: Genre, Platform, Year, Sort + asc/desc toggle (reuse toggle pattern from `BacklogPage.jsx`)
 - [x] `client/src/components/Navbar.jsx`: add "Discover" link
 
 #### B5. Tests (`server/test/games.test.js`)
+
 - [x] discover returns 3 rows; second call within 24h serves from cache (no extra RAWG fetch); RAWG failure still serves last-good
 - [x] browse forwards filters, validates/whitelists `sort`/`order`, paginates
 - [x] genres/platforms return cached reference lists
 - [x] all new routes return 401 unauthenticated
 
 ### Verify
+
 - [x] `cd server && npm test` — 86 tests pass (72 auth/backlog/stats/games + 14 new discover/browse/genres/platforms)
 - [x] `cd client && npm run build` — no errors
 - [x] Manual (email transport = console): register → "check your inbox", grab logged link, login blocked (403) until button-click verify, then login succeeds; resend generic; expired token handled
@@ -197,6 +224,7 @@ Emailed-link reset flow that reuses the Phase 15 infrastructure (`auth_tokens`,
 `VerifyEmailPage` as UI template). New piece: session revocation on reset.
 
 ### Locked decisions (from grilling)
+
 - Revoke existing sessions on reset via `users.password_changed_at` + an
   `issuedAtMs` claim embedded in new refresh JWTs (ms-precision; falls back to
   `iat*1000` for pre-existing tokens). Other sessions die within ≤15 min. Access
@@ -209,65 +237,71 @@ Emailed-link reset flow that reuses the Phase 15 infrastructure (`auth_tokens`,
   account exists).
 
 ### B1. Database
+
 - [x] Migration: add `password_changed_at timestamptz` (nullable) to `users`. No
-  backfill — `NULL` means "never changed", so the refresh `iat` check is skipped
-  for existing sessions. No change to `auth_tokens` (its `type` column already
-  supports `password_reset`).
+      backfill — `NULL` means "never changed", so the refresh `iat` check is skipped
+      for existing sessions. No change to `auth_tokens` (its `type` column already
+      supports `password_reset`).
 
 ### B2. Backend — token + email libs
+
 - [x] `server/src/lib/authTokens.js`: parameterise expiry per token type — replace
-  the single `EXPIRY_MS` with a per-type map (`email_verify` 24h, `password_reset`
-  1h, default 24h); `issueToken` looks up expiry by `type`. `consumeToken`
-  unchanged (already type-aware)
+      the single `EXPIRY_MS` with a per-type map (`email_verify` 24h, `password_reset`
+      1h, default 24h); `issueToken` looks up expiry by `type`. `consumeToken`
+      unchanged (already type-aware)
 - [x] `server/src/lib/email.js`: add `sendPasswordResetEmail(to, link)` mirroring
-  `sendVerificationEmail`; reuse the existing `sendEmail` transport unchanged
+      `sendVerificationEmail`; reuse the existing `sendEmail` transport unchanged
 - [x] `server/src/validation/authSchemas.js`: add `forgotPasswordSchema`
-  (`{ email }`) and `resetPasswordSchema` (`{ token, password: min(8) }`)
+      (`{ email }`) and `resetPasswordSchema` (`{ token, password: min(8) }`)
 
 ### B3. Backend — auth routes (`server/src/routes/auth.js`)
+
 - [x] `POST /forgot-password` (own `createAuthRateLimiter()`): look up user by
-  email; if it exists `issueToken(id, 'password_reset')`, build
-  `${CLIENT_URL}/reset-password?token=<raw>`, `sendPasswordResetEmail`; ALWAYS
-  return generic `200`; in `NODE_ENV=test` expose `_resetToken` only when issued
+      email; if it exists `issueToken(id, 'password_reset')`, build
+      `${CLIENT_URL}/reset-password?token=<raw>`, `sendPasswordResetEmail`; ALWAYS
+      return generic `200`; in `NODE_ENV=test` expose `_resetToken` only when issued
 - [x] `POST /reset-password` (own `createAuthRateLimiter()`): validate;
-  `consumeToken(token, 'password_reset')`; `null` → `400 INVALID_TOKEN`; else
-  `bcrypt.hash` and one `UPDATE` setting `password_hash`,
-  `password_changed_at = now()`, `email_verified = true`; success message, no
-  cookies
+      `consumeToken(token, 'password_reset')`; `null` → `400 INVALID_TOKEN`; else
+      `bcrypt.hash` and one `UPDATE` setting `password_hash`,
+      `password_changed_at = now()`, `email_verified = true`; success message, no
+      cookies
 - [x] `POST /refresh`: select `password_changed_at`; compare via ms-precision
-  `issuedAtMs` claim embedded in the refresh JWT (falls back to `iat*1000` for
-  old tokens); revoke if token predates password change
+      `issuedAtMs` claim embedded in the refresh JWT (falls back to `iat*1000` for
+      old tokens); revoke if token predates password change
 
 ### B4. Frontend
+
 - [x] `client/src/context/AuthContext.jsx`: add `requestPasswordReset(email)` and
-  `resetPassword(token, password)` helpers (thin `apiFetch` wrappers, like
-  `resendVerification`); expose both
+      `resetPassword(token, password)` helpers (thin `apiFetch` wrappers, like
+      `resendVerification`); expose both
 - [x] `client/src/pages/ForgotPasswordPage.jsx` (new) + public `/forgot-password`
-  route in `App.jsx`: email input → generic "check your inbox" confirmation
+      route in `App.jsx`: email input → generic "check your inbox" confirmation
 - [x] `client/src/pages/ResetPasswordPage.jsx` (new) + public `/reset-password`
-  route: read `?token=`, new-password + confirm-password fields (client-side match
-  check), submit → success state linking to `/login`; invalid/expired token (only
-  surfaces on submit) → error state linking to `/forgot-password`
+      route: read `?token=`, new-password + confirm-password fields (client-side match
+      check), submit → success state linking to `/login`; invalid/expired token (only
+      surfaces on submit) → error state linking to `/forgot-password`
 - [x] `client/src/pages/LoginPage.jsx`: add a "Forgot password?" link
 
 ### B5. Tests (`server/test/auth.test.js`)
+
 - [x] forgot-password returns identical generic 200 for unknown vs existing;
-  issues a usable token only for an existing account (`_resetToken` present)
+      issues a usable token only for an existing account (`_resetToken` present)
 - [x] reset-password: old password stops working, new password logs in;
-  `email_verified` flips true; token single-use; expired/invalid → 400; password
-  < 8 chars → 400 validation
+      `email_verified` flips true; token single-use; expired/invalid → 400; password
+      < 8 chars → 400 validation
 - [x] session revocation: a refresh cookie captured before the reset yields 401
-  from `/refresh` afterwards; a fresh login refreshes fine
+      from `/refresh` afterwards; a fresh login refreshes fine
 
 ### Verify
+
 - [x] `cd server && npm test` — 96 tests pass (86 prior + 10 new reset/revocation)
 - [x] `cd client && npm run build` — no errors
 - [x] Manual (email = console): two logged-in "devices"; request reset from a
-  third; use logged link to set new password; redirect to login; old password
-  fails, new works; open sessions bounced within ~15 min / on next refresh;
-  expired/invalid token handled; unknown email still says "check your inbox"
+      third; use logged link to set new password; redirect to login; old password
+      fails, new works; open sessions bounced within ~15 min / on next refresh;
+      expired/invalid token handled; unknown email still says "check your inbox"
 - [x] Sync PRD.md: password-reset stories + notes (`password_changed_at` +
-  `issuedAtMs` revocation, per-type token expiry, reset-also-verifies)
+      `issuedAtMs` revocation, per-type token expiry, reset-also-verifies)
 
 ## Phase 17 — UI Polish (full redesign to the "Hundo" design system)
 
@@ -276,6 +310,7 @@ project, on both desktop and mobile. Presentation only — no backend/API/behavi
 changes; server tests stay green.
 
 ### Design source & locked decisions (from grilling)
+
 - **Design source:** Claude Design project `298c6232-b112-4b89-970a-b7104198b113`
   ("Hundo site polish"). Files: `Hundo Screens.dc.html` (desktop, 13 screens) and
   `Hundo Screens Mobile.dc.html` (mobile, same 13). Re-read specifics per screen
@@ -285,11 +320,12 @@ changes; server tests stay green.
 - **Profile replaces Dashboard** — rename `/dashboard` → `/profile`; rebuild as the
   design's Profile. Drop Recharts pie/bar; fold stat data into tiles + arc. Nav =
   **Backlog / Discover / Profile**.
-- **Full responsive parity** — implement desktop *and* mobile per both files.
+- **Full responsive parity** — implement desktop _and_ mobile per both files.
   Mobile = bottom **tab bar** (Backlog/Discover/Profile) + single-column reflows;
   sidebars/heroes collapse.
 
 ### Design tokens (establish once, reference everywhere)
+
 - **Font:** Space Grotesk 300–700 (Google Fonts); default sans.
 - **Surfaces:** page `oklch(7% 0.022 265)`; panel `oklch(8–10% 0.02 265)`; input
   `oklch(11% 0.022 265)`; borders `oklch(13–20% 0.022 265)`.
@@ -305,113 +341,120 @@ changes; server tests stay green.
   `box-shadow:0 0 0 3px oklch(76% 0.19 55 / 0.18)`, border → amber.
 
 ### P1. Foundation — theme + primitives
+
 - [x] `client/index.html`: add Space Grotesk — `preconnect` to fonts.googleapis /
-  fonts.gstatic + `css2?family=Space+Grotesk:wght@300;400;500;600;700`
+      fonts.gstatic + `css2?family=Space+Grotesk:wght@300;400;500;600;700`
 - [x] `client/tailwind.config.js`: `theme.extend` → `fontFamily.sans` = Space
-  Grotesk; semantic `colors` (surface 0–4 scale, brand, accent, text, border,
-  status map, metacritic) as oklch literals; `keyframes` + `animation` for
-  `floatA/B/C` + `glowPulse`
+      Grotesk; semantic `colors` (surface 0–4 scale, brand, accent, text, border,
+      status map, metacritic) as oklch literals; `keyframes` + `animation` for
+      `floatA/B/C` + `glowPulse`
 - [x] `client/src/index.css`: `@layer base` body bg/text + global input focus ring
-  + placeholder colour; `@layer utilities` for `.dot-grid`
-  (`radial-gradient(circle, oklch(100% 0 0 / 0.045) 1px, transparent 1px); 28px`)
-  and `.glow` radial helpers
+  - placeholder colour; `@layer utilities` for `.dot-grid`
+    (`radial-gradient(circle, oklch(100% 0 0 / 0.045) 1px, transparent 1px); 28px`)
+    and `.glow` radial helpers
 - [x] `client/src/components/ui/Button.jsx` (new): variants `primary` (amber),
-  `secondary` (indigo), `outline`, `ghost`; sizes sm/md/lg; hover lift + glow
+      `secondary` (indigo), `outline`, `ghost`; sizes sm/md/lg; hover lift + glow
 - [x] `client/src/components/ui/Input.jsx` + `Field.jsx` (new): styled input +
-  label/error wrapper; replace inline inputs and the local `Field` in
-  `BacklogEntryForm.jsx`
+      label/error wrapper; replace inline inputs and the local `Field` in
+      `BacklogEntryForm.jsx`
 - [x] `client/src/components/ui/Card.jsx` (new): bordered surface panel
-  (`oklch(10% 0.022 265)` bg, `oklch(18% 0.022 265)` border, radius 14px)
+      (`oklch(10% 0.022 265)` bg, `oklch(18% 0.022 265)` border, radius 14px)
 - [x] `client/src/components/ui/Badge.jsx` (new): `tag` / `status` / `metacritic` /
-  `completion` variants — absorb `STATUS_COLOURS` (BacklogPage) + the Metacritic
-  badge from `GameMeta.jsx` into this single source
+      `completion` variants — absorb `STATUS_COLOURS` (BacklogPage) + the Metacritic
+      badge from `GameMeta.jsx` into this single source
 - [x] `client/src/components/ui/CompletionRing.jsx` (new): conic-gradient ring,
-  props `size`/`percent`/`label`; metric = completed ÷ total entries. Reused on
-  Backlog sidebar, Profile hero, Game Details "Your Entry", auth brand panel
+      props `size`/`percent`/`label`; metric = completed ÷ total entries. Reused on
+      Backlog sidebar, Profile hero, Game Details "Your Entry", auth brand panel
 - [x] `client/src/components/ui/RatingBar.jsx` (new): 10-segment bar, display +
-  interactive; align `StarRating.jsx` usage in `BacklogEntryForm` + Game Details
+      interactive; align `StarRating.jsx` usage in `BacklogEntryForm` + Game Details
 
 ### P2. Shared shell & routing
+
 - [x] `client/src/App.jsx`: split the global wrapper into **PublicLayout** (minimal
-  nav: amber logo + Sign in/Register, full-bleed, drop `max-w-6xl`) for
-  landing/auth and **AppLayout** (top nav + mobile bottom tab bar, full-width) for
-  protected screens. Rename route `/dashboard` → `/profile`
+      nav: amber logo + Sign in/Register, full-bleed, drop `max-w-6xl`) for
+      landing/auth and **AppLayout** (top nav + mobile bottom tab bar, full-width) for
+      protected screens. Rename route `/dashboard` → `/profile`
 - [x] `client/src/components/Navbar.jsx`: redesign — amber logo, search w/ icon,
-  Backlog/Discover/Profile links with active amber underline, Sign out outline
-  button; hidden `< md` (replaced by tab bar)
+      Backlog/Discover/Profile links with active amber underline, Sign out outline
+      button; hidden `< md` (replaced by tab bar)
 - [x] `client/src/components/MobileTabBar.jsx` (new): fixed bottom tab bar
-  (Backlog/Discover/Profile icon+label, active = amber), shown `< md` in AppLayout
+      (Backlog/Discover/Profile icon+label, active = amber), shown `< md` in AppLayout
 - [x] Update any `/dashboard` links/redirects across the client to `/profile`
 
 ### P3. Public / auth screens (re-skin + split-panel restructure)
+
 - [x] `LandingPage.jsx` (design 01): hero copy "Your backlog, actually managed.",
-  dual CTAs (amber "Get started" + outline "Sign in"), floating game-cover cards
-  visual (`floatA/B/C` + `glowPulse`), dot-grid + side glows; mobile = stacked
+      dual CTAs (amber "Get started" + outline "Sign in"), floating game-cover cards
+      visual (`floatA/B/C` + `glowPulse`), dot-grid + side glows; mobile = stacked
 - [x] `RegisterPage.jsx` (02) + `LoginPage.jsx` (03): split layout — left brand
-  panel (completion-ring "H", "Built for completionists.", game-spine strip) +
-  right form panel on the new primitives. Preserve Login's "Forgot password?" +
-  `EMAIL_NOT_VERIFIED` states and Register's pending/resend state. Mobile = form
-  only, brand condensed to top
+      panel (completion-ring "H", "Built for completionists.", game-spine strip) +
+      right form panel on the new primitives. Preserve Login's "Forgot password?" +
+      `EMAIL_NOT_VERIFIED` states and Register's pending/resend state. Mobile = form
+      only, brand condensed to top
 - [x] `VerifyEmailPage.jsx` (08/09/11) + "Check your inbox" (07) on RegisterPage +
-  `ForgotPasswordPage.jsx` (12) + `ResetPasswordPage.jsx` + "Reset link sent" (13):
-  centered branded status cards (ring/icon + heading + copy + CTA). Keep existing
-  button-click-to-verify + token-on-submit behaviour
+      `ForgotPasswordPage.jsx` (12) + `ResetPasswordPage.jsx` + "Reset link sent" (13):
+      centered branded status cards (ring/icon + heading + copy + CTA). Keep existing
+      button-click-to-verify + token-on-submit behaviour
 - [x] Restyle global toasts (react-hot-toast) to the dark/amber theme
 
 ### P4. Core app screens
+
 - [x] `BacklogPage.jsx` (design 05): left **sidebar** (`CompletionRing` + status
-  filter list with counts) + main responsive grid; keep multi-status filter / sort
-  / search behaviour, restyle controls. Mobile = filters become a horizontal pill
-  row, single/two-col grid, tab bar
+      filter list with counts) + main responsive grid; keep multi-status filter / sort
+      / search behaviour, restyle controls. Mobile = filters become a horizontal pill
+      row, single/two-col grid, tab bar
 - [x] `GameCard.jsx`: redesign cover-forward (real RAWG art, gradient fallback) with
-  completion/status badge + rating + hours; variants for backlog vs discover
+      completion/status badge + rating + hours; variants for backlog vs discover
 - [x] `GameDetailPage.jsx` (06): cinematic **hero** (RAWG cover bg + noise-grain SVG
-  + bottom fade + breadcrumb + title + tag/Metacritic/RAWG badges) over two-col
-  body — left About / Details grid / Screenshots; right "Your Entry" `Card`
-  (segmented status control, `RatingBar`, hours, notes). Rebuild
-  `BacklogEntryForm.jsx` on the new primitives. Mobile = hero + stacked single col
+  - bottom fade + breadcrumb + title + tag/Metacritic/RAWG badges) over two-col
+    body — left About / Details grid / Screenshots; right "Your Entry" `Card`
+    (segmented status control, `RatingBar`, hours, notes). Rebuild
+    `BacklogEntryForm.jsx` on the new primitives. Mobile = hero + stacked single col
 - [x] `DiscoverPage.jsx` (10): header ("Discover" + count) + scrollable **category
-  pills** + responsive grid + search; keep data + infinite-scroll behaviour, retire
-  carousel-row layout to match design. Mobile = pills + single/two-col grid
+      pills** + responsive grid + search; keep data + infinite-scroll behaviour, retire
+      carousel-row layout to match design. Mobile = pills + single/two-col grid
 - [x] `ProfilePage.jsx` (rename from `DashboardPage.jsx`, design 04): hero (avatar =
-  email initials + completion arc + identity + stat tiles: games / hours / avg
-  rating / top genre) + completion donut with Done/Playing/Backlog counts +
-  **Library** section (filter pills + game grid). Reuse existing stat computations;
-  derive display name + member-since from email/`created_at`; derive tier from
-  completion %. Drop Recharts (optional simple genre bars). Mobile = stacked
+      email initials + completion arc + identity + stat tiles: games / hours / avg
+      rating / top genre) + completion donut with Done/Playing/Backlog counts +
+      **Library** section (filter pills + game grid). Reuse existing stat computations;
+      derive display name + member-since from email/`created_at`; derive tier from
+      completion %. Drop Recharts (optional simple genre bars). Mobile = stacked
 
 ### Data-availability assumptions (no schema change)
+
 - Avatar = email initials; display name/handle derived from email; member-since
   from `users.created_at`. Mock's bio/handle/tier fields omitted or derived.
 - Cover gradients in the mock are placeholders — use real RAWG art where present,
   gradient fallback when missing.
 
 ### Verify
+
 - [x] `cd client && npm run dev`; drive each route with chromium-cli/Playwright at
-  **1440px** and **390px**, screenshot, compare to the matching desktop/mobile
-  design screen (`/`, `/login`, `/register`, `/forgot-password`, `/reset-password`,
-  `/verify-email` + states, `/backlog`, `/games/:id`, `/discover`, `/profile`).
-  **Look at the screenshots** — correct fonts/colours, no blank frames, no console
-  errors
+      **1440px** and **390px**, screenshot, compare to the matching desktop/mobile
+      design screen (`/`, `/login`, `/register`, `/forgot-password`, `/reset-password`,
+      `/verify-email` + states, `/backlog`, `/games/:id`, `/discover`, `/profile`).
+      **Look at the screenshots** — correct fonts/colours, no blank frames, no console
+      errors
 - [x] `cd client && npm run build` — clean build (bundle 758KB → 364KB w/o Recharts)
 - [x] Spot-check: nav active states, mobile tab bar, Game Details status control +
-  rating, Discover pills, Backlog filters, completion rings with real data
-  (verified via Playwright mock-driven screenshots, 10 routes × desktop+mobile;
-  found+fixed Input forwardRef bug — hours/notes now populate from entry data)
+      rating, Discover pills, Backlog filters, completion rings with real data
+      (verified via Playwright mock-driven screenshots, 10 routes × desktop+mobile;
+      found+fixed Input forwardRef bug — hours/notes now populate from entry data)
 - [x] `cd server && npm test` still green (96/96, no backend change)
 - [x] Sync PRD.md: note the design-system adoption (Space Grotesk, oklch token
-  palette, primitive component library, `/dashboard` → `/profile`, responsive
-  tab-bar shell)
+      palette, primitive component library, `/dashboard` → `/profile`, responsive
+      tab-bar shell)
 
 ### Follow-ups
+
 - [x] Remove unused `recharts` dependency from `client/package.json` (dropped when
-  the Dashboard became the Profile; already tree-shaken out of the bundle) and
-  update the lockfile; confirm `npm run build` still clean
+      the Dashboard became the Profile; already tree-shaken out of the bundle) and
+      update the lockfile; confirm `npm run build` still clean
 - [x] Fix "Member since" gap: the `POST /login` response omits `created_at`
-  (only `GET /me` includes it), so the Profile hides member-since until a reload.
-  Add `created_at` to the login response `SELECT` + returned user (and `/refresh`
-  for consistency) so `AuthContext` has it immediately; keep auth tests green
-  (96/96)
+      (only `GET /me` includes it), so the Profile hides member-since until a reload.
+      Add `created_at` to the login response `SELECT` + returned user (and `/refresh`
+      for consistency) so `AuthContext` has it immediately; keep auth tests green
+      (96/96)
 
 ## Phase 18 — Pixel-Match Rework (exact copy of the design, pair-by-pair)
 
@@ -421,6 +464,7 @@ Rework each screen **pair (desktop + mobile) at a time** into an exact copy.
 Presentation only; no backend/API/behaviour changes; server tests stay green.
 
 ### Design source
+
 - Claude Design project `298c6232-b112-4b89-970a-b7104198b113` ("Hundo site polish"):
   `Hundo Screens.dc.html` (desktop, 13 screens) + `Hundo Screens Mobile.dc.html`
   (mobile, same 13). Split per-screen snippets live in the session scratchpad
@@ -428,6 +472,7 @@ Presentation only; no backend/API/behaviour changes; server tests stay green.
   gone. The HTML is the pixel-level truth — copy exact oklch values, px sizes, copy.
 
 ### Locked decisions (from grilling)
+
 - **Real data only.** Build every section derivable from existing data (entries +
   RAWG + `/stats`); substitute an honest equivalent where the design shows data we
   don't have. No backend, migrations, or new tests.
@@ -439,9 +484,10 @@ Presentation only; no backend/API/behaviour changes; server tests stay green.
   email-preview card on screen 08.
 
 ### Global conventions (every phase)
+
 - **Skip mobile-mockup chrome** — the fake iOS status bar (9:41, signal/battery) and
   phone-frame corners/shadow are canvas artifacts; do NOT reproduce them. Do the
-  mobile *content* reflow via real Tailwind breakpoints.
+  mobile _content_ reflow via real Tailwind breakpoints.
 - Prefer semantic token classes; drop to arbitrary `[oklch(...)]` / `[NNpx]` only to
   hit an exact design value the tokens don't cover.
 - No behaviour/logic changes (forms, queries, auth, routing) — restyle only.
@@ -449,189 +495,240 @@ Presentation only; no backend/API/behaviour changes; server tests stay green.
 - One commit per phase (ask first); no Co-Authored-By; Australian English in copy.
 
 ### P1. Landing (design 01) + shared public shell
+
 Files: `components/PublicLayout.jsx`, `pages/LandingPage.jsx`
+
 - [x] PublicLayout nav: `md:px-28` (=112px) desktop, `px-5` (20px) mobile; logo
-  `text-[21px]` brand `tracking-[-0.02em]`; Register button accent `px-[22px] py-2.5
-  text-[15px] rounded-[7px]`
+      `text-[21px]` brand `tracking-[-0.02em]`; Register button accent `px-[22px] py-2.5
+text-[15px] rounded-[7px]`
 - [x] Hero container `md:px-28`; tagline 600/11px uppercase amber `tracking-[0.18em]
-  mb-7` (desktop plain text; mobile = badge pill)
+mb-7` (desktop plain text; mobile = badge pill)
 - [x] H1 `md:text-[68px] leading-[1.03] tracking-[-0.03em] md:mb-[26px]`, "actually"
-  span amber; mobile `text-[44px]`
+      span amber; mobile `text-[44px]`
 - [x] Body `md:text-[18px] md:leading-[1.65] max-w-[390px] md:mb-12`; mobile 15px/1.6,
-  second sentence hidden `< md`
+      second sentence hidden `< md`
 - [x] CTAs `md:gap-3.5`: "Get started" amber (lg size = `px-10 py-4`, `flex-1` on
-  mobile), "Sign in" outline
+      mobile), "Sign in" outline
 - [x] Verify floating game-cards visual (float keyframes + 100% badge); added mobile
-  rotated card-fan
+      rotated card-fan
 - [x] Mobile: added amber tagline badge (`bg-brand/10` border pill)
 
 ### P2. Auth entry: Register (02) + Sign In (03)
+
 Files: `components/auth/AuthBrandPanel.jsx`, `pages/RegisterPage.jsx`,
 `pages/LoginPage.jsx`, `components/ui/Input.jsx`, `components/ui/Field.jsx`
+
 - [x] AuthBrandPanel: `w-[496px]`; dot-grid `opacity-[0.03]`; ring `thickness={9}
-  labelSize={46}`; "Hundo" `text-[28px]`; tagline/desc `text-[14px]`; spines `w-9
-  h-[52px] rounded-[5px]` with amber ✓
+labelSize={46}`; "Hundo" `text-[28px]`; tagline/desc `text-[14px]`; spines `w-9
+h-[52px] rounded-[5px]` with amber ✓
 - [x] Added `AuthBrandMark.jsx` mobile variant (76px ring `thickness={5} labelSize={28}`
-  + "Built for completionists.") shown above form `< lg` in both pages
+  - "Built for completionists.") shown above form `< lg` in both pages
 - [x] Input primitive padding `px-4 py-3.5` (14/16px), `rounded-[9px] text-[15px]`
 - [x] Added optional `labelSize` prop to `CompletionRing` (backward-compatible) so the
-  brand "H" hits design sizes
+      brand "H" hits design sizes
 - [x] Form panels: heading `text-[32px] md:text-[38px]` `tracking-[-0.028em]`, sub
-  `text-[14px] md:text-[15px]`; field rhythm email `mb-4 md:mb-[22px]`, password
-  `mb-7 md:mb-[34px]`, footer `mt-[22px] md:mt-[26px]`; mobile top-aligned layout
+      `text-[14px] md:text-[15px]`; field rhythm email `mb-4 md:mb-[22px]`, password
+      `mb-7 md:mb-[34px]`, footer `mt-[22px] md:mt-[26px]`; mobile top-aligned layout
 - [x] Exact copy: "Create account" / "Join and start building your library.";
-  "Welcome back." / "Sign in to continue your journey."
+      "Welcome back." / "Sign in to continue your journey."
 - [x] Login password row right-aligned "Forgot password?" (mobile "Forgot?");
-  footer links accent
+      footer links accent
 
 ### P3. Auth status screens (07/08/09/11/12/13)
+
 Files: new `components/auth/StepIndicator.jsx`; `pages/RegisterPage.jsx` (pending),
 `pages/VerifyEmailPage.jsx` (idle/success/error), `pages/ForgotPasswordPage.jsx`
 (form + sent), `pages/ResetPasswordPage.jsx`; reuse `AuthScreen`/`IconBadge`/`CompletionRing`
+
 - [x] `StepIndicator.jsx` (new): 3 steps Register → Verify email → Sign in, per-step
-  states done✓/active/pending + connectors (amber / amber→grey gradient / grey)
+      states done✓/active/pending + connectors (amber / amber→grey gradient / grey)
 - [x] Parameterised `AuthScreen` (`maxWidthClass`/`gapClass`/`glowColor`/`glowSize`/
-  `decor`) and `IconBadge` (`size`/`corner`) for the varied status layouts
+      `decor`) and `IconBadge` (`size`/`corner`) for the varied status layouts
 - [x] 07 Check your inbox (Register pending): step indicator `['done','active',
-  'pending']`; 108px envelope badge; heading `md:text-[46px]` (mobile 34px); email
-  bold; resend inside bordered box
+'pending']`; 108px envelope badge; heading `md:text-[46px]` (mobile 34px); email
+      bold; resend inside bordered box
 - [x] 08 Verify your email (VerifyEmail idle): step indicator; 108px envelope badge +
-  heading + real "Verify my account" button; "Link expires in 24 hours" footer.
-  **Email-preview card skipped** per decision
+      heading + real "Verify my account" button; "Link expires in 24 hours" footer.
+      **Email-preview card skipped** per decision
 - [x] 09 Email verified (success): all-done-ish step indicator `['done','done',
-  'active']`; 168px 360° amber ring + centred check + 2 decorative rings; confetti via
-  `decor`; heading `md:text-[48px]`; button "Sign in to Hundo →" w/ glow
+'active']`; 168px 360° amber ring + centred check + 2 decorative rings; confetti via
+      `decor`; heading `md:text-[48px]`; button "Sign in to Hundo →" w/ glow
 - [x] 11 Link expired (error): 128px partial error ring `oklch(52% 0.22 25)` + alert
-  glyph + red glow; heading `md:text-[44px]`; resend form `flex-col sm:flex-row gap-2.5`
-  (input `sm:flex-1`, button `shrink-0`); "← Back to sign in"
+      glyph + red glow; heading `md:text-[44px]`; resend form `flex-col sm:flex-row gap-2.5`
+      (input `sm:flex-1`, button `shrink-0`); "← Back to sign in"
 - [x] 12 Forgot password: 96px lock IconBadge (layered shadow rings); heading
-  `md:text-[44px]`; form **card** (`bg-[oklch(9.5%_0.022_265)]` border `rounded-2xl
-  p-6 md:p-8`, shadow) w/ uppercase "Email address" label; "Send reset link";
-  "Remember your password? Sign in"
+      `md:text-[44px]`; form **card** (`bg-[oklch(9.5%_0.022_265)]` border `rounded-2xl
+p-6 md:p-8`, shadow) w/ uppercase "Email address" label; "Send reset link";
+      "Remember your password? Sign in"
 - [x] 13 Reset link sent (ForgotPassword submitted): 108px envelope IconBadge +
-  `corner` amber ✓ badge; heading "Check your inbox" `md:text-[46px]`; email bold;
-  **info card** (glowing dot + "Link expires in 1 hour" bold; divider; spam/resend
-  line wired to re-request); "← Back to sign in"
+      `corner` amber ✓ badge; heading "Check your inbox" `md:text-[46px]`; email bold;
+      **info card** (glowing dot + "Link expires in 1 hour" bold; divider; spam/resend
+      line wired to re-request); "← Back to sign in"
 - [x] Reset-password form (no design screen): restyled to the forgot-password card
-  language; success reuses the 168px ring, error reuses the error ring
+      language; success reuses the 168px ring, error reuses the error ring
 
 ### P4. Backlog (design 05)
+
 Files: `pages/BacklogPage.jsx`, `components/GameCard.jsx` (extract
 `BacklogSidebar.jsx` / `NowPlayingCard.jsx` if > 300 lines)
+
 - [x] `BacklogSidebar.jsx` (new, `w-[252px]`): CompletionRing 110px `thickness={11}` +
-  "NN% done"; stats "N Games | Nh Played"; Status list with 7px colour dots +
-  right-aligned counts; **Top Genres** from `stats.genreDistribution` (top 4 + count +
-  gradient bar); "+ Add a game" → /discover
+      "NN% done"; stats "N Games | Nh Played"; Status list with 7px colour dots +
+      right-aligned counts; **Top Genres** from `stats.genreDistribution` (top 4 + count +
+      gradient bar); "+ Add a game" → /discover
 - [x] Main: filter pills (with inline counts on mobile) + search + sort + order toggle
-  + grid/list toggle (local `view` state; list = 1-col). Controls `hidden lg:flex`
+  - grid/list toggle (local `view` state; list = 1-col). Controls `hidden lg:flex`
 - [x] Sections grouped by status in order **Now Playing** (2-col featured) / Completed /
-  Backlog / Wishlist / Dropped (compact grids); Backlog gets the dashed "Add game" ghost
+      Backlog / Wishlist / Dropped (compact grids); Backlog gets the dashed "Add game" ghost
 - [x] GameCard refactored to variants: `featured` (90/120px hero, title overlay,
-  "PLAYING" badge, hours, **no progress bar**, "Update" btn), `compact` (72px cover,
-  100% badge when completed, title, ★rating + hours or "◦ status" pill), `browse`
-  (kept for Discover). Hashed gradient fallback when no cover; year·genre omitted
-  (not on entries — real-data-only)
+      "PLAYING" badge, hours, **no progress bar**, "Update" btn), `compact` (72px cover,
+      100% badge when completed, title, ★rating + hours or "◦ status" pill), `browse`
+      (kept for Discover). Hashed gradient fallback when no cover; year·genre omitted
+      (not on entries — real-data-only)
 - [x] Mobile: pills with counts, 2-col grids incl. featured, bottom tab bar (AppLayout)
 - [x] NOTE: filter switched from multi-select to **single-select** (activeStatus) to
-  match the design's single active pill/sidebar highlight
+      match the design's single active pill/sidebar highlight
 
 ### P5. Game Details (design 06)
+
 Files: `pages/GameDetailPage.jsx`, `components/BacklogEntryForm.jsx`,
 `components/GameScreenshots.jsx`, `components/ui/RatingBar.jsx`
+
 - [x] Hero (260/300px): layered overlays — texture repeating-linear-gradient, SVG
-  noise `opacity-[0.18]`, 520px left wash, 160px bottom fade to page; real RAWG art
-  when present, gradient fallback otherwise
+      noise `opacity-[0.18]`, 520px left wash, 160px bottom fade to page; real RAWG art
+      when present, gradient fallback otherwise
 - [x] Hero content: breadcrumb; title `md:text-[52px]` + `(year)` + inline "100%
-  COMPLETED" pill; tag/platform pills + divider + Metacritic badge + RAWG "★ x / 5"
+      COMPLETED" pill; tag/platform pills + divider + Metacritic badge + RAWG "★ x / 5"
 - [x] Details grid: `grid-cols-2` at all breakpoints, cells `px-4 py-[13px]`, uppercase
-  10px labels (cells still render conditionally on available RAWG data)
+      10px labels (cells still render conditionally on available RAWG data)
 - [x] Screenshots: `grid-cols-3`
 - [x] Your Entry card: header (gradient bg) + mini 38px ring `labelSize={9}` when
-  completed; segmented status control (kept all 5 statuses — Wishlist retained for
-  function); RatingBar already shows "N / 10"; Hours input with absolute "hrs" suffix +
-  helper "Avg for this game: Nh — ±Xh vs avg" (from `game.playtime`); Notes + counter;
-  Save/Remove. Card `lg:sticky`
+      completed; segmented status control (kept all 5 statuses — Wishlist retained for
+      function); RatingBar already shows "N / 10"; Hours input with absolute "hrs" suffix +
+      helper "Avg for this game: Nh — ±Xh vs avg" (from `game.playtime`); Notes + counter;
+      Save/Remove. Card `lg:sticky`
 - [x] Mobile: hero + single stacked column (kept stacking rather than the design's
-  Your Entry/Overview/Media tab switcher — low-cost path per plan)
+      Your Entry/Overview/Media tab switcher — low-cost path per plan)
 
 ### P6. Discover (design 10)
+
 Files: `pages/DiscoverPage.jsx`, `components/GameCard.jsx` (browse variant),
 `components/Navbar.jsx`
+
 - [x] Header: "Discover" `text-[30px]` + **real** count (`N+ games` from loaded
-  results, not the mock "10,000+"); category pills — active `font-semibold` amber-fill,
-  inactive `border border-edge`; secondary filter row (selects + order + `N+ results`)
-  with a bottom border + "Clear filters" (shown only when filters differ from default)
+      results, not the mock "10,000+"); category pills — active `font-semibold` amber-fill,
+      inactive `border border-edge`; secondary filter row (selects + order + `N+ results`)
+      with a bottom border + "Clear filters" (shown only when filters differ from default)
 - [x] Grid: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5`
 - [x] Browse GameCard variant: 3/2 aspect art, top-right green score badge (metacritic
-  else RAWG rating), top-left platform badge ("Multi" when >1), bottom-right "+ Add"
-  amber button (appears on hover), title + "year · genre" meta
+      else RAWG rating), top-left platform badge ("Multi" when >1), bottom-right "+ Add"
+      amber button (appears on hover), title + "year · genre" meta
 - [x] Navbar search placeholder "Search for a game…"
 
 ### P7. Profile (design 04)
+
 Files: `pages/ProfilePage.jsx` (extract `ProfileSidebar.jsx` if needed),
 `components/ui/CompletionRing.jsx`, `components/GameCard.jsx`
+
 - [x] Hero: `md:gap-[52px]`; 108px avatar conic ring + initials; identity = display
-  name from email + tier badge (from completion %) + "Member since <Month YYYY>"
-  (**no @handle, bio, or online dot** — real-data-only); 4 stat tiles (rounded-full,
-  star tile amber)
+      name from email + tier badge (from completion %) + "Member since <Month YYYY>"
+      (**no @handle, bio, or online dot** — real-data-only); 4 stat tiles (rounded-full,
+      star tile amber)
 - [x] Completion donut: 122px conic ring + "complete"; Done/Playing/Backlog counts
-  inline with 1px dividers (700/17px numbers coloured brand/accent/muted)
+      inline with 1px dividers (700/17px numbers coloured brand/accent/muted)
 - [x] Library: "LIBRARY" label + filter pills with counts (rounded-md); grid
-  `grid-cols-2 sm:grid-cols-3`; reuse P4 compact GameCard
+      `grid-cols-2 sm:grid-cols-3`; reuse P4 compact GameCard
 - [x] `ProfileSidebar.jsx` (new, `w-[264px]`, hidden on mobile): **Top Genres** bars +
-  **Currently Playing** cards (real, status=playing). **Achievements block omitted**
+      **Currently Playing** cards (real, status=playing). **Achievements block omitted**
 - [x] Mobile: stacked hero, centred donut + counts, stat-chip row, filter tabs, 2-col
-  library grid; sidebar hidden `< lg`
+      library grid; sidebar hidden `< lg`
 - [x] NOTE: tier label is data-driven (COLLECTOR at 37.5%), not the mock "COMPLETIONIST+"
 
 ### Verify (per phase + final)
+
 - [x] Each phase: `cd client && npm run build` — clean build (final bundle 391 kB)
 - [x] Each phase: one-off Playwright screenshots (mock API, cached headless-shell) at
-  **1440px** and **390px**, compared to the matching design snippets; no console errors
-  (not committed)
+      **1440px** and **390px**, compared to the matching design snippets; no console errors
+      (not committed)
 - [x] Form-adjacent phases: RHF still populates/resets (forwardRef fix intact) — probed
-  Game Details hours=24.5 / notes render correctly
+      Game Details hours=24.5 / notes render correctly
 - [x] Final: all 7 pairs screenshot-verified + `cd server && npm test` green (96/96,
-  untouched)
+      untouched)
 
 ### Review fixes — round 1 (desktop, from local testing)
+
 - [x] Forgot/Reset password: added `text-left` to the form card so the "Email address"
-  label aligns to the input's start (heading/body above stay centred)
+      label aligns to the input's start (heading/body above stay centred)
 - [x] Backlog grid/list toggle: replaced the `▦`/`≡` glyphs with the design's SVG icons
-  (4-square grid + 3-line list)
+      (4-square grid + 3-line list)
 - [x] Game Details hero: title + year in an inner `items-baseline` group (year shares
-  the title's text baseline at any size — fixes mobile); the "100% COMPLETED" chip sits
-  in the outer `items-end` row with **no bottom margin**, so it aligns flush to the
-  inner group's bottom (≈ the title baseline) — chip box bottom on the baseline, desktop
-  + mobile. (Earlier `items-end`+padding and `overflow-hidden` attempts were size-fragile
-  / didn't hold.)
+      the title's text baseline at any size — fixes mobile); the "100% COMPLETED" chip sits
+      in the outer `items-end` row with **no bottom margin**, so it aligns flush to the
+      inner group's bottom (≈ the title baseline) — chip box bottom on the baseline, desktop
+  - mobile. (Earlier `items-end`+padding and `overflow-hidden` attempts were size-fragile
+    / didn't hold.)
 - [x] Auth (Sign up + Sign in): moved the golden top wash out of the brand panel to a
-  full-width `absolute inset-x-0 top-0 h-[260px]` layer on the split container (`hidden
-  lg:block`), so it spans across + behind the form panel
+      full-width `absolute inset-x-0 top-0 h-[260px]` layer on the split container (`hidden
+lg:block`), so it spans across + behind the form panel
 - [x] Auth (Sign up + Sign in): brand-panel dot-grid was `opacity-[0.03]` (≈invisible on
-  top of the 4.5% dots) — dropped the opacity so dots show behind the brand pane too;
-  removed the brand panel's `bg-surface-raised` + `border-r` so the split is one seamless
-  canvas with no dividing line (ring inner → `bg-surface` to match the page)
+      top of the 4.5% dots) — dropped the opacity so dots show behind the brand pane too;
+      removed the brand panel's `bg-surface-raised` + `border-r` so the split is one seamless
+      canvas with no dividing line (ring inner → `bg-surface` to match the page)
 - [x] Game Details mobile: added the design's `Your Entry / Overview / Media` tab strip
-  (`lg:hidden`) with `Your Entry` as default, so the entry form is front-and-centre
-  instead of buried below About/Details/Screenshots. Desktop two-column layout unchanged
-  (each section rendered once; tab state only gates visibility `< lg` via `hidden lg:block`).
-  Hid the card's own "Your Entry" header + 100% ring on mobile (`hidden lg:flex`) since the
-  active tab already says "Your Entry" — kept on desktop
+      (`lg:hidden`) with `Your Entry` as default, so the entry form is front-and-centre
+      instead of buried below About/Details/Screenshots. Desktop two-column layout unchanged
+      (each section rendered once; tab state only gates visibility `< lg` via `hidden lg:block`).
+      Hid the card's own "Your Entry" header + 100% ring on mobile (`hidden lg:flex`) since the
+      active tab already says "Your Entry" — kept on desktop
 - [x] Profile mobile: rebuilt the header to match design 04 mobile — a separate
-  `lg:hidden` compact single-row layout (72px avatar + name + tier badge + small 54px %
-  donut, then a one-line stats-chip row); the elaborate desktop header is now
-  `hidden lg:block`. Hid the "Library" label on mobile and replaced the wrapping pill
-  row with full-width `flex-1` underline filter tabs (one line). Desktop unchanged.
+      `lg:hidden` compact single-row layout (72px avatar + name + tier badge + small 54px %
+      donut, then a one-line stats-chip row); the elaborate desktop header is now
+      `hidden lg:block`. Hid the "Library" label on mobile and replaced the wrapping pill
+      row with full-width `flex-1` underline filter tabs (one line). Desktop unchanged.
 - [x] Profile mobile donut sublabel changed "done" → uppercase "complete" to match the
-  desktop label
+      desktop label
 - [x] PublicLayout nav (via `useLocation`): on mobile hide the Register button on
-  `/register` and the "Sign in" link on `/login` (`max-lg:hidden`); both stay on desktop
+      `/register` and the "Sign in" link on `/login` (`max-lg:hidden`); both stay on desktop
 - [x] PublicLayout nav: on the auth pages, the Register action renders as a plain text
-  link on mobile (matching "Sign in") and the filled accent button on `lg`; landing keeps
-  the filled button at all sizes (per the mobile design)
+      link on mobile (matching "Sign in") and the filled accent button on `lg`; landing keeps
+      the filled button at all sizes (per the mobile design)
 - [x] Profile library cards: added a `library` GameCard variant matching design 04 —
-  coloured status badge on **every** card (✓ Completed amber / ▶ Playing accent / ◦
-  Backlog grey / dropped / wishlist), completed card groups ★rating + hours on the right,
-  100% badge (completed) / pulse dot (playing) on the cover. Backlog `compact` card left
-  as-is (its design omits the badge on completed cards)
+      coloured status badge on **every** card (✓ Completed amber / ▶ Playing accent / ◦
+      Backlog grey / dropped / wishlist), completed card groups ★rating + hours on the right,
+      100% badge (completed) / pulse dot (playing) on the cover. Backlog `compact` card left
+      as-is (its design omits the badge on completed cards)
+
+## Phase 19 — Demo Mode (in-app verification for the hosted showcase)
+
+Resend only delivers to a verified sending domain, unavailable on the free tier, so
+only the account owner receives verification emails. Demo mode lets testers and
+recruiters verify in-app without receiving an email. Config/presentation only;
+verification logic unchanged; server tests stay green.
+
+### Locked decision
+
+- Reuse the existing test-mode token-exposure seam rather than auto-verifying or
+  bypassing verification, so the full 3-step wizard still plays out for the visitor.
+
+### Backend (`server/src/routes/auth.js`)
+
+- [x] Add `EXPOSE_VERIFY_TOKEN = NODE_ENV==='test' || DEMO_MODE==='true'`; `/register`
+      and `/resend-verification` include `_verifyToken` in the response when set (off by
+      default — no exposure in normal operation)
+- [x] `server/.env.example`: document the optional `DEMO_MODE` flag
+
+### Frontend
+
+- [x] `AuthContext`: `register()` and `resendVerification()` return `_verifyToken`
+      (or `null`)
+- [x] `RegisterPage` "check your inbox": capture the token; when present, show an amber
+      "Demo mode … Verify now" card linking to `/verify-email?token=…` (reuses the existing
+      VerifyEmailPage button-click flow — no auto-verify on load)
+
+### Verify
+
+- [x] `cd client && npm run build` — clean
+- [x] `cd server && npm test` — 96/96 green (test-mode behaviour unchanged)
+- [x] Set `DEMO_MODE=true` in the backend deploy env; register → "Verify now" →
+      verified → sign in
+- [x] Sync PRD.md (env-var list + email-delivery notes)
