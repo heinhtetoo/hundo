@@ -1,4 +1,5 @@
 const { pool } = require('../src/db');
+const { assertTestDatabase } = require('../src/test/setup');
 
 describe('test harness inter-test cleanup', () => {
   it('seeds a game_collections row', async () => {
@@ -84,5 +85,38 @@ describe('DATABASE_URL resolution', () => {
     const result = await pool.query('SELECT current_database() AS name');
 
     expect(result.rows[0].name).toBe(resolvedName);
+  });
+});
+
+describe('test-database guard', () => {
+  it('rejects a connection string whose database is not a test database', () => {
+    expect(() =>
+      assertTestDatabase('postgresql://postgres:password@localhost:5432/hundo'),
+    ).toThrow('hundo');
+  });
+
+  it('rejects an absent DATABASE_URL', () => {
+    expect(() => assertTestDatabase(undefined)).toThrow(
+      'DATABASE_URL is missing or unparseable',
+    );
+  });
+
+  it('rejects a malformed or unparseable connection string', () => {
+    expect(() => assertTestDatabase('not-a-connection-string')).toThrow(
+      'DATABASE_URL is missing or unparseable',
+    );
+  });
+
+  it('accepts the CI service-container URL and the local fallback URL', () => {
+    expect(() =>
+      assertTestDatabase(
+        'postgresql://postgres:password@localhost:5432/hundo_test',
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertTestDatabase(
+        'postgresql://postgres:password@postgres:5432/hundo_test',
+      ),
+    ).not.toThrow();
   });
 });
