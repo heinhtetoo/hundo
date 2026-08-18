@@ -216,6 +216,16 @@ describe('Games API', () => {
       expect(fetch.mock.calls.length).toBe(callsAfterFirst);
     });
 
+    it('fetches from RAWG when the cache is cold, directly after a test that populated it', async () => {
+      mockFetchOk(RAWG_LIST);
+
+      const res = await agent.get('/api/v1/games/discover');
+
+      expect(res.status).toBe(200);
+      expect(fetch).toHaveBeenCalled();
+      expect(res.body.rows).toHaveLength(3);
+    });
+
     it('still returns rows when RAWG fails if cache exists', async () => {
       mockFetchOk(RAWG_LIST);
       await agent.get('/api/v1/games/discover');
