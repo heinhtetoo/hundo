@@ -1,5 +1,5 @@
 const { pool } = require('../src/db');
-const { assertTestDatabase } = require('../src/test/setup');
+const { assertTestDatabase } = require('../src/test/assert-test-database');
 
 describe('test harness inter-test cleanup', () => {
   it('seeds a game_collections row', async () => {
