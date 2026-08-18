@@ -110,24 +110,20 @@ npm --prefix client run build
 
 **Test database — read this before writing any test.**
 
-- Connection is **hardcoded** in `server/vitest.config.js`:
-  `postgresql://postgres:password@localhost:5432/hundo_test`.
+- Connection resolves from **`DATABASE_URL`** in `server/vitest.config.js`, falling
+  back to `postgresql://postgres:password@localhost:5432/hundo_test` when unset.
+  An import-time guard in `server/src/test/setup.js` refuses to run unless the
+  resolved database name marks it as a test database (contains "test"), and
+  likewise if the value is absent or unparseable — so the suite cannot silently
+  point at a real database.
 - It is a **local Postgres instance**, _not_ the compose service (compose uses host
   `postgres`, database `hundo` — a different database). The test DB must exist
   locally before the suite runs.
 - `NODE_ENV=test` no-ops rate limiting and email sending. RAWG is stubbed with fake
   data — no network calls, no quota burn, no flakiness.
-- `setupFiles` truncates `backlog_entries`, `games`, `users` after each test;
-  `fileParallelism: false`.
+- `setupFiles` truncates `backlog_entries`, `games`, `users`, `auth_tokens`, and
+  `game_collections` after each test; `fileParallelism: false`.
 - Never point the suite at a database holding real data.
-
-**Known gaps in the test harness** (see §8 — fix these before leaning on the suite):
-
-1. The truncation list omits **`auth_tokens`** and **`game_collections`**, both of
-   which the newer features write to. Verification, password-reset, and Discover
-   tests can leak state between files.
-2. The hardcoded `DATABASE_URL` cannot be overridden by env, so CI cannot point the
-   suite at a service container without editing the config file.
 
 - Node: pinned only by `server/Dockerfile` (`node:20-alpine`). Assume **Node 20**.
 
@@ -246,8 +242,10 @@ Repo inspected 2026-08-14; all seven original questions resolved and folded into
 
 - [ ] Reconcile `code-style.md` and `CLAUDE.local.md` with this file (§5) — fold in
       or defer, so agents get one instruction set.
-- [ ] Confirm how CI provisions Postgres for the Vitest run today (the hardcoded
-      localhost URL suggests a service container on the default port; item #0 in §8
-      makes this explicit either way).
+- [x] Confirm how CI provisions Postgres for the Vitest run today — a
+      `postgres:16-alpine` service container on the default port. `.github/
+      workflows/ci.yml` now passes `DATABASE_URL` to both the migrate and test
+      steps explicitly, rather than the test step riding on vitest.config.js's
+      fallback (#4).
 - [ ] Decide whether `client` gets its own `vitest.config` or shares the root one
       when the RTL harness lands (harness ticket's plan gate).
