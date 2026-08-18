@@ -144,10 +144,12 @@ npm --prefix client run build
   mutations invalidate the relevant query keys and fire a toast; forms via React
   Hook Form + Zod resolvers.
 - **File size**: `max-lines: 300` per `STACK.md` (already stated in the repo's own
-  `code-style.md`, currently unenforced). Grandfathered files, as of 2026-08-14 —
+  `code-style.md`, currently unenforced). Grandfathered files, as of 2026-08-18 —
   a ticket that touches one splits it:
+  - `server/test/auth.test.js` — 425
   - `client/src/pages/GameDetailPage.jsx` — 357
   - `server/src/routes/auth.js` — 325
+  - `server/test/games.test.js` — 330
 - **Existing agent context files**: the repo already carries `code-style.md` and
   `CLAUDE.local.md`. This `PROJECT.md` is the authority for pipeline work; those
   files must be reconciled with it (fold their content in, or have them defer to
