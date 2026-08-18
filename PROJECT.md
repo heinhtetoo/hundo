@@ -112,10 +112,10 @@ npm --prefix client run build
 
 - Connection resolves from **`DATABASE_URL`** in `server/vitest.config.js`, falling
   back to `postgresql://postgres:password@localhost:5432/hundo_test` when unset.
-  An import-time guard in `server/src/test/setup.js` refuses to run unless the
-  resolved database name marks it as a test database (contains "test"), and
-  likewise if the value is absent or unparseable — so the suite cannot silently
-  point at a real database.
+  A test-database guard in `server/src/test/assert-test-database.js` runs at import time
+  from `setup.js`, before any truncation hook is registered, and aborts the suite
+  unless the resolved **`DATABASE_URL`** names a test database.
+  `server/src/test/resolve-database-url.js` owns the environment-or-fallback resolution.
 - It is a **local Postgres instance**, _not_ the compose service (compose uses host
   `postgres`, database `hundo` — a different database). The test DB must exist
   locally before the suite runs.
@@ -210,11 +210,8 @@ critical paths — confirm at the harness ticket's plan gate:
 
 These are tickets the pipeline works through on Hundo, roughly in this order:
 
-0. **Test-harness hygiene** — add `auth_tokens` and `game_collections` to the
-   truncation list; make `DATABASE_URL` env-overridable with the current value as
-   the fallback. **Proposed Stage 1 hand-run ticket**: small, backend-only,
-   verifiable (write a test that fails on leaked state, then fix it), and it repairs
-   the foundation every later ticket stands on.
+0. ~~Test-harness hygiene~~ — done (#4, Stage 1 hand-run). Truncation covers all five tables;
+   **`DATABASE_URL`** is env-overridable behind a test-database guard.
 1. **Frontend test harness** — Vitest + RTL on the existing Vite setup, plus a
    `client` test script. _First orchestrated ticket._ Activates the client coverage
    gate at 50%.
@@ -245,8 +242,8 @@ Repo inspected 2026-08-14; all seven original questions resolved and folded into
 - [ ] Reconcile `code-style.md` and `CLAUDE.local.md` with this file (§5) — fold in
       or defer, so agents get one instruction set.
 - [x] Confirm how CI provisions Postgres for the Vitest run today — a
-      `postgres:16-alpine` service container on the default port. `.github/
-      workflows/ci.yml` now passes `DATABASE_URL` to both the migrate and test
+      `postgres:16-alpine` service container on the default port.
+      `.github/workflows/ci.yml` now passes `DATABASE_URL` to both the migrate and test
       steps explicitly, rather than the test step riding on vitest.config.js's
       fallback (#4).
 - [ ] Decide whether `client` gets its own `vitest.config` or shares the root one
