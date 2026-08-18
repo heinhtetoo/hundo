@@ -73,3 +73,16 @@ describe('test harness inter-test cleanup', () => {
     expect(result.rows[0].id).toBe('1');
   });
 });
+
+describe('DATABASE_URL resolution', () => {
+  it('connects to the database named in the resolved DATABASE_URL', async () => {
+    const resolvedName = new URL(process.env.DATABASE_URL).pathname.replace(
+      /^\//,
+      '',
+    );
+
+    const result = await pool.query('SELECT current_database() AS name');
+
+    expect(result.rows[0].name).toBe(resolvedName);
+  });
+});
