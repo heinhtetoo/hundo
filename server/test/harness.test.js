@@ -1,5 +1,6 @@
 const { pool } = require('../src/db');
 const { assertTestDatabase } = require('../src/test/assert-test-database');
+const { resolveDatabaseUrl } = require('../src/test/resolve-database-url');
 
 describe('test harness inter-test cleanup', () => {
   it('seeds a game_collections row', async () => {
@@ -76,15 +77,16 @@ describe('test harness inter-test cleanup', () => {
 });
 
 describe('DATABASE_URL resolution', () => {
-  it('connects to the database named in the resolved DATABASE_URL', async () => {
-    const resolvedName = new URL(process.env.DATABASE_URL).pathname.replace(
-      /^\//,
-      '',
+  it('uses DATABASE_URL from the environment when it is set', () => {
+    expect(
+      resolveDatabaseUrl({ DATABASE_URL: 'postgresql://x/hundo_test_alt' }),
+    ).toBe('postgresql://x/hundo_test_alt');
+  });
+
+  it('falls back to the local test database when DATABASE_URL is unset', () => {
+    expect(resolveDatabaseUrl({})).toBe(
+      'postgresql://postgres:password@localhost:5432/hundo_test',
     );
-
-    const result = await pool.query('SELECT current_database() AS name');
-
-    expect(result.rows[0].name).toBe(resolvedName);
   });
 });
 
