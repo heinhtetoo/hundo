@@ -37,6 +37,29 @@ server/   Express API — JSON only, all routes under /api/v1/, raw SQL on
           node-postgres, JWT auth in httpOnly cookies, node-pg-migrate
 ```
 
+**Branch model.** `dev` is the **integration branch**: every ticket branch is cut
+from it, every PR targets it, and it is what `git worktree add` starts from.
+`main` is the repository default and the deploy branch — Vercel and the OCI
+Actions workflow both fire on push to it.
+
+`main` advances **only** by fast-forward from `dev`:
+
+```bash
+git checkout main && git pull
+git merge --ff-only dev && git push origin main
+```
+
+Nothing else may land on `main` — no direct commits, no PRs, no hotfixes. A
+`--ff-only` failure means that rule was broken; fix the cause, do not force it.
+
+Two consequences agents and the orchestrator must know:
+
+- `gh pr create` defaults to the repository default branch. Always pass
+  `--base dev`.
+- GitHub auto-closes a linked issue only when the PR merges into the **default**
+  branch. PRs merge into `dev`, so **the orchestrator closes the issue by hand**
+  after merge.
+
 - **Frontend** deploys to Vercel from `main`. Vercel rewrites proxy `/api/*` to the
   backend so cookies stay same-origin (this is what keeps Safari ITP off your back —
   do not "simplify" it away).
@@ -170,10 +193,22 @@ assertion-free tests are Judge-bounceable.
 
 **Coverage gates (changed-line):**
 
-| Area      | Threshold | Notes                                        |
-| --------- | --------- | -------------------------------------------- |
-| `server/` | **70%**   | Active from ticket #1                        |
-| `client/` | **50%**   | Activates when the RTL harness ticket merges |
+| Area      | Threshold | Active from                    | Measured by                                                           | Enforced by    |
+| --------- | --------- | ------------------------------ | --------------------------------------------------------------------- | -------------- |
+| `server/` | **70%**   | ticket #1                      | _no command yet_ — see below                                          | Judge, by hand |
+| `client/` | **50%**   | the ticket _after_ the harness | `npm --prefix client run test:coverage` (added by the harness ticket) | Judge, by hand |
+
+**Measurement is manual until §8 item 3.** Vitest's thresholds are whole-project,
+not changed-line, so the coverage command produces a report and the Judge reads
+the changed files out of it. Diff-aware enforcement in CI arrives with the
+ESLint/CI ticket. Until then a plan that cannot state its coverage position files
+a `Deviations` entry rather than guessing a number.
+
+**The harness ticket is exempt from the client gate.** Its own diff is
+configuration plus test files, and test files are excluded — there is almost no
+gated production code in it. It _activates_ the gate; it is not measured against
+it. No `test:coverage` threshold is configured at that ticket, only the script and
+the v8 provider.
 
 Excluded from the gate: generated files, migrations, pure-presentational layout
 components.
@@ -246,5 +281,7 @@ Repo inspected 2026-08-14; all seven original questions resolved and folded into
       `.github/workflows/ci.yml` now passes `DATABASE_URL` to both the migrate and test
       steps explicitly, rather than the test step riding on vitest.config.js's
       fallback (#4).
+- [ ] Add a `server` `test:coverage` script — the 70% gate has been unmeasurable
+      since it was written. Filed as hundo#7.
 - [ ] Decide whether `client` gets its own `vitest.config` or shares the root one
       when the RTL harness lands (harness ticket's plan gate).
