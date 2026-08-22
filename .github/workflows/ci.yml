@@ -57,9 +57,30 @@ jobs:
           DATABASE_URL: >-
             postgresql://postgres:password@localhost:5432/hundo_test
 
+  test-client:
+    name: Test client
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Run tests
+        run: npm test
+        working-directory: client
+
   deploy:
     name: Deploy
-    needs: test
+    needs: [test, test-client]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
