@@ -184,8 +184,9 @@ npm --prefix client run build
 - **Ownership checks**: every backlog mutation verifies the entry belongs to the
   authenticated user. This is a security invariant — a diff that touches
   `backlog` routes without preserving it is an automatic Judge bounce.
-- **Test location**: client tests colocate with the component as
-  `*.test.jsx`; server tests live in `server/test/`. Both count toward the
+- **Test location**: client tests colocate with the module as
+  `*.test.{js,jsx}` (`.jsx` for components, `.js` for plain modules like
+  `api.js`); server tests live in `server/test/`. Both count toward the
   300-line cap.
 
 ## 6. Testing law (project-scoped)
