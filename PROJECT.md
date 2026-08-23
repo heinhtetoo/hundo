@@ -90,7 +90,7 @@ explicitly scopes a migration.
 | 3   | Drizzle ORM                          | Raw SQL via node-postgres                                                                                                                             | Keep for now; candidate migration after TS lands                                                            |
 | 4   | DB-backed sessions                   | JWT access+refresh in httpOnly cookies, `password_changed_at` revocation, single-flight refresh wrapper                                               | **Keep.** Do not extend the JWT machinery; any new auth surface argues for sessions at the plan gate        |
 | 5   | pnpm                                 | **npm** (three separate `package-lock.json` files; `--prefix` scripts, not real workspaces)                                                           | Migrate early — cheap, unlocks phantom-dep protection, collapses three lockfiles into one                   |
-| 6   | Component tests exist                | None (PRD scoped them out); `client` has **no test script at all**                                                                                    | **Migrating now** — harness is the first orchestrated ticket                                                |
+| 6   | Component tests exist                | None (PRD scoped them out); `client` has **no test script at all**                                                                                    | **Done** — harness landed in ticket #8 (Vitest + RTL, `client` test script)                                 |
 | 7   | Playwright smoke pack                | None (ad-hoc runs only)                                                                                                                               | Add after the component harness                                                                             |
 | 8   | Neon for Vercel-hosted apps          | Self-hosted Postgres on the box                                                                                                                       | **Keep.** Hundo's _app_ is box-hosted; the pairing law is satisfied                                         |
 | 9   | Named exports, no default exports    | **Server: named** (`module.exports = { … }`). **Client: default exports, 33 files.** No barrel files anywhere                                         | Enforce on **changed files only**; no repo-wide sweep. Client conversion rides along with the TS migration  |
@@ -116,11 +116,15 @@ npm run dev                   # concurrently: server (node --watch) + client (vi
 npm run dev:server
 npm run dev:client
 
-# tests — Vitest + Supertest against a real test database
-npm test                      # root → delegates to server
+# tests — Vitest + Supertest against a real test database (server),
+# Vitest + RTL against jsdom (client)
+npm test                      # root → server suite, then client suite
 npm --prefix server run test              # vitest run
 npm --prefix server run test:watch
 npm --prefix server run test -- <path>    # single file
+npm --prefix client run test              # vitest run
+npm --prefix client run test:watch
+npm --prefix client run test:coverage     # vitest run --coverage (v8, no thresholds)
 
 # migrations
 npm --prefix server run migrate:up
@@ -180,6 +184,10 @@ npm --prefix client run build
 - **Ownership checks**: every backlog mutation verifies the entry belongs to the
   authenticated user. This is a security invariant — a diff that touches
   `backlog` routes without preserving it is an automatic Judge bounce.
+- **Test location**: client tests colocate with the module as
+  `*.test.{js,jsx}` (`.jsx` for components, `.js` for plain modules like
+  `api.js`); server tests live in `server/test/`. Both count toward the
+  300-line cap.
 
 ## 6. Testing law (project-scoped)
 
@@ -196,7 +204,7 @@ assertion-free tests are Judge-bounceable.
 | Area      | Threshold | Active from                    | Measured by                                                           | Enforced by    |
 | --------- | --------- | ------------------------------ | --------------------------------------------------------------------- | -------------- |
 | `server/` | **70%**   | ticket #1                      | _no command yet_ — see below                                          | Judge, by hand |
-| `client/` | **50%**   | the ticket _after_ the harness | `npm --prefix client run test:coverage` (added by the harness ticket) | Judge, by hand |
+| `client/` | **50%**   | the ticket _after_ the harness | `npm --prefix client run test:coverage`                               | Judge, by hand |
 
 **Measurement is manual until §8 item 3.** Vitest's thresholds are whole-project,
 not changed-line, so the coverage command produces a report and the Judge reads
@@ -247,9 +255,9 @@ These are tickets the pipeline works through on Hundo, roughly in this order:
 
 0. ~~Test-harness hygiene~~ — done (#4, Stage 1 hand-run). Truncation covers all five tables;
    **`DATABASE_URL`** is env-overridable behind a test-database guard.
-1. **Frontend test harness** — Vitest + RTL on the existing Vite setup, plus a
-   `client` test script. _First orchestrated ticket._ Activates the client coverage
-   gate at 50%.
+1. ~~**Frontend test harness**~~ — done (#8). Vitest + RTL on the existing Vite
+   setup, plus a `client` test script. _First orchestrated ticket._ Activates the
+   client coverage gate at 50%.
 2. **npm → pnpm + Node pin** — collapse three lockfiles into one, add `engines` and
    `.nvmrc` at Node 20. Small, mechanical, unlocks phantom-dependency protection.
 3. **ESLint + Prettier from scratch** — not "adopt the shared config" but _create_
@@ -283,5 +291,7 @@ Repo inspected 2026-08-14; all seven original questions resolved and folded into
       fallback (#4).
 - [ ] Add a `server` `test:coverage` script — the 70% gate has been unmeasurable
       since it was written. Filed as hundo#7.
-- [ ] Decide whether `client` gets its own `vitest.config` or shares the root one
-      when the RTL harness lands (harness ticket's plan gate).
+- [x] Decide whether `client` gets its own `vitest.config` or shares the root
+      one when the RTL harness lands (harness ticket's plan gate) — decided:
+      `client/vitest.config.js`, its own config. There is no root Vitest config
+      to share (#8).
