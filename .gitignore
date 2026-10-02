@@ -42,3 +42,6 @@ server/coverage/
 
 # Preferences
 CLAUDE.local.md
+
+# Styr
+.styr/
