@@ -7,7 +7,8 @@
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
     "test": "npm --prefix server run test && npm --prefix client run test",
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "ci:all": "npm ci --no-audit --no-fund && npm --prefix server ci --no-audit --no-fund && npm --prefix client ci --no-audit --no-fund"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

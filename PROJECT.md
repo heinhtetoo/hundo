@@ -39,6 +39,8 @@ server/   Express API — JSON only, all routes under /api/v1/, raw SQL on
 
 **Integration branch:** `dev`
 
+**Install:** `npm run ci:all`
+
 **Branch model.** `dev` is the **integration branch**: every ticket branch is cut
 from it, every PR targets it, and it is what `git worktree add` starts from.
 `main` is the repository default and the deploy branch — Vercel and the OCI
