@@ -5,6 +5,10 @@
 # separate, deliberate step (progress.md Phase 20, T7).
 #
 #   sudo ./setup-deploy-host.sh /path/to/hundo-deploy.pub
+#   sudo ./setup-deploy-host.sh --check /path/to/hundo-deploy.pub
+#
+# --check runs the preconditions and exits without changing anything. Use it
+# to confirm the script's assumptions hold before letting it act.
 #
 # Secrets are generated here, on the host, and are never printed. Nothing in
 # this script needs to know an existing secret value.
@@ -21,6 +25,11 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 # with DEPLOY_DIR=... if the files are copied somewhere else.
 DEPLOY_DIR=${DEPLOY_DIR:-$SCRIPT_DIR/../deploy}
 SSHD_DROPIN=/etc/ssh/sshd_config.d/99-hundo-ci.conf
+CHECK_ONLY=0
+if [ "${1:-}" = '--check' ]; then
+  CHECK_ONLY=1
+  shift
+fi
 PUBKEY_PATH=${1:-}
 
 say() { printf '  %s\n' "$*"; }
@@ -51,8 +60,13 @@ check_preconditions() {
   for f in deploy-hundo docker-compose.prod.yml init-db.sh; do
     [ -r "$DEPLOY_DIR/$f" ] || die "missing $DEPLOY_DIR/$f"
   done
-  [ -r "$OLD_ENV" ] || die "cannot read existing env to carry over: $OLD_ENV"
-  say "ok — port $SSH_PORT free, sshd_config.d honoured, source env readable"
+  # Only needed to seed a NEW .env. Once /etc/hundo/.env exists the source is
+  # irrelevant — and it is deliberately deleted once this work is verified.
+  if [ ! -f "$CONF_DIR/.env" ]; then
+    [ -r "$OLD_ENV" ] \
+      || die "no $CONF_DIR/.env yet, and cannot read $OLD_ENV to seed it from"
+  fi
+  say 'ok — all preconditions satisfied'
 }
 
 create_deploy_user() {
@@ -224,6 +238,10 @@ report() {
 }
 
 check_preconditions
+if [ "$CHECK_ONLY" -eq 1 ]; then
+  printf '\nPreconditions pass. Nothing was changed (--check).\n'
+  exit 0
+fi
 create_deploy_user
 install_deploy_script
 install_sudoers
