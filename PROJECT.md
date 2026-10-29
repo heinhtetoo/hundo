@@ -12,6 +12,10 @@ Hundo ticket.
 
 ---
 
+For a plain-language tour of the deployment — what runs where, how a request
+travels, where the secrets are and what to check when something breaks — see
+`docs/ARCHITECTURE.md`.
+
 ## 1. What Hundo is
 
 A personal game-backlog tracker. Users search a game catalog (RAWG API), add titles
