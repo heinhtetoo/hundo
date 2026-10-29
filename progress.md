@@ -943,8 +943,9 @@ by hand is a different trust level, so one source of truth is fine.
 - [x] `sshd -T` for ubuntu on port 22 byte-identical before and after —
       script preflight confirmed on every run
 - [x] Tailscale SSH from the laptop to ubuntu still works
-- [ ] `ssh -p 7422 hundo-deploy@100.108.46.45 'id'` runs the deploy and exits —
-      proving the forced command discards supplied input
+- [x] `ssh -p 7422 hundo-deploy@100.108.46.45 'id'` runs the deploy and exits —
+      proving the forced command discards supplied input. Tested with
+      `'cat /etc/shadow'`: output was Pulling/Pulled/Running only
 - [x] `ssh -p 7422 ubuntu@100.108.46.45` refused by `Match LocalPort` scoping —
       `sshd -T` at `lport=7422` reports `allowusers hundo-deploy`
 - [x] Schema diff (6 migrations vs squashed) empty — 367 lines, 0 differences
@@ -954,7 +955,8 @@ by hand is a different trust level, so one source of truth is fine.
 - [x] App reachable through the Funnel URL — 401 on `auth/me`, `backlog` and
       `stats` in 196ms, so Express, Funnel routing, `BASE_PATH` stripping and
       the auth middleware all work
-- [ ] Register → verify → sign in with a fresh test account
+- [x] Register → verify → sign in with a fresh test account — DEMO_MODE verify
+      card as expected, so `hundo_app` writes successfully as a non-superuser
 - [x] `docker compose -p hundo config` parses from `/etc/hundo` — now checked
       at provisioning time
 - [x] `npm --prefix server test` and `npm --prefix client test` green —
