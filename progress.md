@@ -932,8 +932,9 @@ by hand is a different trust level, so one source of truth is fine.
       missing; embedded heredocs gone except the templated sshd drop-in.
       260 → 235 lines
 - [x] Delete `docker-compose.prod.example.yml` and both hand-sync notes
-- [ ] Re-run the script on the host: must stay idempotent and produce files
-      byte-identical to what is already live
+- [x] Re-run the script on the host: must stay idempotent and produce files
+      byte-identical to what is already live — all three diffs empty
+      (`docker-compose.prod.yml`, `init-db.sh`, `deploy-hundo`)
 
 ### T10. Retire the laptop copy of the deploy key (after T8 verifies)
 
