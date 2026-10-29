@@ -732,3 +732,195 @@ verification logic unchanged; server tests stay green.
 - [x] Set `DEMO_MODE=true` in the backend deploy env; register → "Verify now" →
       verified → sign in
 - [x] Sync PRD.md (env-var list + email-delivery notes)
+
+## Phase 20 — Deploy Hardening + Datastore Reset
+
+The `main` deploy failed on 2026-10-29 with `ssh: handshake failed: EOF`. Root
+cause: Tailscale SSH is enabled on `blackx6-server`, so tailscaled owns port 22
+on the tailnet and `OCI_SSH_KEY` is never evaluated — the runner arrives as
+`tag:ci`, matches no `ssh` ACL rule, and is dropped mid-handshake. The only
+existing rule is `check` + `autogroup:member`, which a tagged node can never
+match (tagged devices have no user identity), and `check` needs a browser
+re-auth no CI runner can perform.
+
+A Tailscale SSH rule's `dst` accepts only a tag, `autogroup:self`, or the same
+named user as `src` — so restoring that path would mean tagging the server.
+Rejected. OpenSSH on a second, tailnet-only port is used instead, which also
+restores forced-command support that Tailscale SSH does not have.
+
+Bundled in: a CI-only deploy account, a least-privilege Postgres role, squashed
+migrations, rotated secrets, and config moved out of a world-readable home
+directory.
+
+### Locked decisions (from grilling)
+
+- **Transport:** OpenSSH on port **7422**, reachable only over the tailnet. The
+  server is not tagged. 7100 rejected (X Font Service holds it); 100 rejected
+  as reading suspicious despite being unassigned.
+- **Port scoping:** `Match LocalPort 7422` limits that port to `hundo-deploy`,
+  terminated by `Match all`. The terminator is load-bearing — Ubuntu's
+  `Include` sits near the top of `sshd_config`, so an open `Match` in a drop-in
+  leaks into the rest of the parse and would silently make global settings
+  conditional for the other users on this shared box.
+- **CI account:** `hundo-deploy`, deliberately **not** in the `docker` group —
+  membership is root-equivalent and would expose the other five stacks on the
+  box. Narrow sudoers to one fixed script, forced command with `restrict`.
+- **Deploy runs as root**, reusing ubuntu's existing GHCR login via
+  `DOCKER_CONFIG=/home/ubuntu/.docker`. The package is private and root has no
+  credential of its own; issuing root a second token was rejected as
+  duplicating an expiry problem that already exists rather than adding safety.
+- **No backup.** Data is disposable — test account only, no live users.
+- **DB privileges (Option A):** `hundo_app` owns the `hundo` database but is not
+  superuser. Removes `COPY … FROM PROGRAM` (RCE on the DB container),
+  `pg_read_file()`, role creation and cross-database access — with zero code
+  change, because the role still owns its own schema so entrypoint migrations
+  keep working. `postgres` is retained for admin only and leaves the app's
+  `DATABASE_URL`.
+- **Migrations squashed** 6 → 1, generated from `pg_dump --schema-only` rather
+  than hand-written, proven by diffing against a fresh 6-migration run. Only
+  safe while data is disposable; the window closes at the first real user.
+- **Config to `/etc/hundo/`**, root-owned, `.env` at `0600`. The directory holds
+  only configuration — Postgres data is a named Docker volume — so `/etc` is the
+  honest home. The move is hygiene, not access: the deploy script runs as root
+  and never needed the path at all.
+- **Rotate** `POSTGRES_PASSWORD` and both JWT secrets — free alongside the wipe.
+  `RESEND_API_KEY` and `RAWG_API_KEY` deliberately **not** rotated despite four
+  months at mode `664` on a box where styr runs autonomously. Accepted risk.
+- **Image tags:** CI pushes `:latest` and `:<sha>`; compose tracks `:latest`
+  because the forced command takes no arguments and cannot be told a SHA. This
+  makes PROJECT.md's "Rollback = redeploy previous image tag" true for the first
+  time — only `:latest` has ever existed.
+- **Deploy touches the backend only** (`--no-deps`), so Postgres never restarts
+  on a push.
+- Backend binds `127.0.0.1:3000`. Funnel proxies `/hundo/` to
+  `http://127.0.0.1:3000`, so all-interfaces was wider than required.
+- Repo's `docker-compose.prod.yml` becomes `docker-compose.prod.example.yml`. It
+  has never been deployable — `${{ github.repository }}` is Actions syntax and
+  Compose hard-errors with `invalid interpolation format`.
+- No Cloudflare involvement anywhere in Hundo (searched repo + history); the
+  path is Vercel rewrite → Tailscale Funnel → Express.
+
+### Ordering constraint
+
+The squash and the wipe are coupled. A squashed image against a database that
+already records the six migrations will try to run the new baseline, hit an
+existing table, and crash-loop under `restart: unless-stopped`. And
+`up -d --no-deps backend` cannot start a stopped Postgres, so a wiped stack
+cannot bring itself back. T1–T8 are in the only safe order, and T7 must bring
+Postgres up by hand before T8.
+
+### T1. Repo — squash migrations
+
+- [ ] Run all 6 migrations into a throwaway container; capture
+      `pg_dump --schema-only` as the reference
+- [ ] Write one baseline migration reproducing it exactly — `users`, `games`,
+      `backlog_entries`, `auth_tokens`, `game_collections`, the status enum, all
+      indexes and FK constraints
+- [ ] Delete the 6 superseded migration files
+- [ ] Prove equivalence: fresh DB + squashed vs fresh DB + 6, `diff` of
+      `pg_dump --schema-only` must be empty
+- [ ] `npm --prefix server test` green against a rebuilt local test DB
+
+### T2. Repo — CI workflow
+
+- [ ] Deploy step: add `port: 7422`
+- [ ] Deploy step: `username` from `OCI_USER` (now `hundo-deploy`), key from the
+      rotated `OCI_SSH_KEY`
+- [ ] Build step: push `:${{ github.sha }}` alongside `:latest`
+- [ ] Reduce the inline `script:` body and comment why — the forced command
+      overrides whatever CI sends
+
+### T3. Repo — compose example + docs
+
+- [ ] Rename `docker-compose.prod.yml` → `docker-compose.prod.example.yml`;
+      hardcode `ghcr.io/heinhtetoo/hundo/backend:latest`; add `env_file: .env` to
+      postgres; header stating `/etc/hundo` holds the live config
+- [ ] `PROJECT.md` §2: correct "volume-mounted to block storage" — it is a plain
+      named Docker volume under `/var/lib/docker/volumes/`
+- [ ] `PROJECT.md` §2: record the new deploy topology (port 7422,
+      `hundo-deploy`, forced command, root + `DOCKER_CONFIG`)
+- [ ] `PROJECT.md` §7: record `DEMO_MODE=true` in production as intentional
+- [ ] `docs/` decision record for this session, including deferred ideas
+
+### T4. Server — deploy account + sshd
+
+- [ ] `useradd -m -s /bin/bash hundo-deploy`; do not add to `docker`
+- [ ] `/usr/local/bin/deploy-hundo` (root:root 0755): export
+      `DOCKER_CONFIG=/home/ubuntu/.docker`, `cd /etc/hundo`, pull backend,
+      `up -d --no-deps backend`
+- [ ] `/etc/sudoers.d/hundo-deploy` — one command only; validate with `visudo -c`
+- [ ] `authorized_keys`: `command="sudo -n /usr/local/bin/deploy-hundo",restrict`
+- [ ] `/etc/ssh/sshd_config.d/99-hundo-ci.conf`: `Port 22`, `Port 7422`,
+      `Match LocalPort 7422` block, `Match all`. Listing port 22 explicitly is
+      mandatory — any `Port` directive replaces the default and would strand
+      every other user on the box
+- [ ] Capture `sshd -T -C user=ubuntu,...,lport=22` before and after; `sshd -t`
+      to validate; `systemctl reload ssh`, never `restart`
+- [ ] Show the comment field of ubuntu's single existing `authorized_keys` entry
+      and decide with the user whether to remove it — it is probably the old
+      unrestricted CI key, but may be the only break-glass if Tailscale SSH fails
+
+### T5. Server — /etc/hundo config
+
+- [ ] `install -d -o root -g root -m 0750 /etc/hundo`
+- [ ] `docker-compose.prod.yml` (0644): postgres pinned to an exact 16.x patch,
+      init-script mount, `DATABASE_URL` via `hundo_app`, backend published on
+      `127.0.0.1:3000:3000`
+- [ ] `.env` (0600): new `POSTGRES_PASSWORD`, new `HUNDO_APP_PASSWORD`, new JWT
+      secrets; carry over `RAWG_API_KEY`, `RESEND_API_KEY`, `EMAIL_*`,
+      `BASE_PATH`, `CLIENT_URL`, `DEMO_MODE`
+- [ ] `init-db.sh` (0755): create the `hundo_app` LOGIN role, then
+      `ALTER DATABASE hundo OWNER TO hundo_app` (PG16 gives it `public` via
+      `pg_database_owner`, so no explicit GRANT is needed)
+- [ ] Keep `~/docker-blackx6/hundo/` until T8 verifies, then remove
+
+### T6. GitHub + Tailscale
+
+- [ ] Generate an ed25519 keypair for `hundo-deploy`
+- [ ] Update secrets: `OCI_USER=hundo-deploy`, `OCI_SSH_KEY` = new private key
+- [ ] Tailscale policy: `hosts: {"oci": "100.108.46.45"}` plus an `acls` entry
+      `src: ["tag:ci"] → dst: ["oci:7422"]`. No `ssh` section change; the
+      existing laptop rule is untouched
+- [ ] Confirm 7422 is reachable over the tailnet; if OCI's iptables blocks it,
+      add a rule scoped to `tailscale0`, never a blanket open
+
+### T7. Wipe + fresh Postgres
+
+- [ ] `docker compose -p hundo down` from the old directory
+- [ ] `docker volume rm hundo_postgres_data` — leave the other project's
+      `docker_db_data` untouched
+- [ ] `docker compose -p hundo up -d postgres` from `/etc/hundo` so the fresh
+      volume initialises and `init-db.sh` runs
+- [ ] Confirm `SELECT rolsuper FROM pg_roles WHERE rolname='hundo_app'` is false
+
+### T8. First hardened deploy
+
+- [ ] Merge to `dev`, then `git merge --ff-only dev` onto `main`
+- [ ] CI: both image tags pushed, deploy step green
+- [ ] Re-register the test account (DEMO_MODE self-verify path)
+
+### Verify
+
+- [ ] `sshd -T` for ubuntu on port 22 byte-identical before and after
+- [ ] Tailscale SSH from the laptop to ubuntu still works
+- [ ] `ssh -p 7422 hundo-deploy@100.108.46.45 'id'` runs the deploy and exits —
+      proving the forced command discards supplied input
+- [ ] `ssh -p 7422 ubuntu@100.108.46.45` refused by `Match LocalPort` scoping
+- [ ] Schema diff (6 migrations vs squashed) empty
+- [ ] `hundo_app` is not superuser; app connects as it, not as `postgres`
+- [ ] `/etc/hundo/.env` is `0600 root:root`; the `664` copy is gone
+- [ ] App reachable through the Funnel URL; register → verify → sign in
+- [ ] `docker compose -p hundo config` parses from `/etc/hundo`
+- [ ] `npm --prefix server test` and `npm --prefix client test` green
+
+### Follow-ups (deferred — not in this phase)
+
+- [ ] Split config: `/opt/hundo` for the deployment unit, `/etc/hundo` for
+      secrets, wired with `--env-file`. Compose interpolates `${VAR}` only from
+      the project-dir `.env` or `--env-file`, never from `env_file:`
+- [ ] Free major Postgres upgrade while data is still disposable; needs CI and
+      local dev moved in lockstep
+- [ ] Rotate `RESEND_API_KEY` / `RAWG_API_KEY` if the accepted risk is revisited
+- [ ] Move the other five stacks out of `/home/ubuntu/docker-blackx6/`
+- [ ] Pull-based deploy (server polls GHCR) to remove inbound access entirely
+- [ ] `gh auth refresh -s read:packages` to confirm which tags exist today
