@@ -866,7 +866,8 @@ Postgres up by hand before T8.
 
 ### T5. Server — /etc/hundo config
 
-- [x] `install -d -o root -g root -m 0750 /etc/hundo`
+- [x] `install -d -o root -g root -m 0755 /etc/hundo` — 0750 blocked the
+      operator from cd-ing in; `.env` at 0600 is what protects the secrets
 - [x] `docker-compose.prod.yml` (0644): postgres pinned to `16.14-alpine`,
       init-script mount, `DATABASE_URL` via `hundo_app`, backend published on
       `127.0.0.1:3000:3000`

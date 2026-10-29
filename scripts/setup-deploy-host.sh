@@ -103,7 +103,10 @@ install_authorized_key() {
 
 write_config_dir() {
   step "Config: $CONF_DIR"
-  install -d -o root -g root -m 0750 "$CONF_DIR"
+  # 0755, as /etc convention. Confidentiality comes from .env being 0600
+  # root-only, not from hiding the directory — and 0750 only broke the
+  # operator's ability to cd in and read the compose file.
+  install -d -o root -g root -m 0755 "$CONF_DIR"
 
   cat > "$CONF_DIR/init-db.sh" <<'INITDB'
 #!/bin/sh
