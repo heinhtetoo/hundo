@@ -6,6 +6,9 @@
 # fixed forced command, which is what stops a compromised pipeline rewriting
 # volume mounts to reach the host filesystem. See progress.md Phase 20.
 #
+# Kept in sync by hand with scripts/setup-deploy-host.sh, which writes the
+# live file. If you change one, change the other.
+#
 # Compose derives the project name from the directory, so /etc/hundo gives
 # project `hundo` and volume `hundo_postgres_data`. The deploy script also
 # passes `-p hundo` explicitly.
