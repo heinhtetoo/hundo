@@ -1,13 +1,12 @@
-# Reference copy — NOT deployed from this repo.
+# Live production config for Hundo. Installed to /etc/hundo by
+# scripts/setup-deploy-host.sh — this file is the single source of truth.
 #
-# The live file is /etc/hundo/docker-compose.prod.yml on the OCI host
-# (root:root 0644), edited there by hand. Secrets come from /etc/hundo/.env
-# (root:root 0600). CI never writes either file: the deploy account runs a
-# fixed forced command, which is what stops a compromised pipeline rewriting
-# volume mounts to reach the host filesystem. See progress.md Phase 20.
+# Applied BY HAND, never by CI. The compose file controls volume mounts, so a
+# pipeline able to rewrite it could mount the host filesystem; a human running
+# the provisioning script is a different trust level.
 #
-# Kept in sync by hand with scripts/setup-deploy-host.sh, which writes the
-# live file. If you change one, change the other.
+# Secrets come from /etc/hundo/.env (root:root 0600), generated on the host and
+# never stored here.
 #
 # Compose derives the project name from the directory, so /etc/hundo gives
 # project `hundo` and volume `hundo_postgres_data`. The deploy script also

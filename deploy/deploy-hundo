@@ -1,0 +1,21 @@
+#!/bin/sh
+# Installed to /usr/local/bin/deploy-hundo (root:root 0755).
+#
+# The only action CI can trigger. The deploy account's authorized_keys pins
+# this as a forced command, so sshd runs it and discards whatever the client
+# sends. Root-owned and not writable by that account, so CI cannot change what
+# deploying means.
+set -e
+
+# Docker credentials are per-user and the GHCR package is private. Reuse the
+# login that already exists under ubuntu rather than storing a second token
+# that would rot on its own expiry schedule.
+export DOCKER_CONFIG=/home/ubuntu/.docker
+
+cd /etc/hundo
+
+# -f is required: docker-compose.prod.yml is not one of the default names
+# Compose searches for (compose.yaml/yml, docker-compose.yaml/yml).
+# --no-deps leaves Postgres alone, so a push never restarts the database.
+docker compose -p hundo -f docker-compose.prod.yml pull backend
+docker compose -p hundo -f docker-compose.prod.yml up -d --no-deps backend

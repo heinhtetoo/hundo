@@ -92,12 +92,17 @@ an interactive browser re-auth no CI runner can perform. No rule matched,
    `/etc/hundo/docker-compose.prod.yml` to a SHA and redeploying.
 10. **Deploy touches the backend only** (`up -d --no-deps backend`), so the
     database never restarts on a push.
-11. **Repo's compose file renamed to `docker-compose.prod.example.yml`.** It had
+11. **Repo's compose file is no longer named as if it were deployed.** It had
     never been deployable — it contained `${{ github.repository }}`, which is
     GitHub Actions syntax that Compose rejects with `invalid interpolation
-    format`. Making the repo the source of truth was rejected on security
-    grounds: the compose file controls volume mounts, so deploying it from the
-    repo would hand a compromised pipeline the ability to mount the host.
+    format`. First renamed to `.example.yml`; superseded during cleanup by
+    `deploy/`, which holds the compose file, `init-db.sh` and `deploy-hundo` as
+    the single source that `scripts/setup-deploy-host.sh` installs. Having the
+    repo be the source of truth was initially rejected on security grounds, but
+    that over-applied the constraint: the risk is **CI** being able to rewrite
+    volume mounts, not a human applying the files deliberately. Moving the two
+    embedded scripts out also means shellcheck can lint them, which it cannot
+    do inside a heredoc.
 
 ## Accepted risks
 
@@ -151,4 +156,7 @@ No Cloudflare anywhere in Hundo; searched the repo and git history.
 - `ssh -p 7422 ubuntu@<ip>` is refused by `Match LocalPort` scoping.
 - `SELECT rolsuper FROM pg_roles WHERE rolname='hundo_app'` is `false`.
 - `/etc/hundo/.env` is `0600 root:root`.
+- `sshd -T` now needs `-C ...,lport=NN` on this host; a bare `sshd -T` errors
+  with `'Match LocalPort' in configuration but 'lport' not in connection test
+  specification`.
 - `sshd -T -C user=ubuntu,...,lport=22` is unchanged from before this work.

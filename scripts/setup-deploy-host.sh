@@ -16,6 +16,10 @@ SSH_PORT=7422
 CONF_DIR=/etc/hundo
 OLD_ENV=/home/ubuntu/docker-blackx6/hundo/.env
 DEPLOY_SCRIPT=/usr/local/bin/deploy-hundo
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+# Where the host files come from. Keeps the repo layout by default; override
+# with DEPLOY_DIR=... if the files are copied somewhere else.
+DEPLOY_DIR=${DEPLOY_DIR:-$SCRIPT_DIR/../deploy}
 SSHD_DROPIN=/etc/ssh/sshd_config.d/99-hundo-ci.conf
 PUBKEY_PATH=${1:-}
 
@@ -43,6 +47,10 @@ check_preconditions() {
       die "port $SSH_PORT is in use by something that is not this setup"
     fi
   fi
+  [ -d "$DEPLOY_DIR" ] || die "no deploy directory at $DEPLOY_DIR"
+  for f in deploy-hundo docker-compose.prod.yml init-db.sh; do
+    [ -r "$DEPLOY_DIR/$f" ] || die "missing $DEPLOY_DIR/$f"
+  done
   [ -r "$OLD_ENV" ] || die "cannot read existing env to carry over: $OLD_ENV"
   say "ok — port $SSH_PORT free, sshd_config.d honoured, source env readable"
 }
@@ -65,23 +73,8 @@ create_deploy_user() {
 
 install_deploy_script() {
   step "Deploy script: $DEPLOY_SCRIPT"
-  cat > "$DEPLOY_SCRIPT" <<'DEPLOY'
-#!/bin/sh
-# The only action CI can trigger. Root-owned and not writable by the deploy
-# account, so CI cannot change what deploying means.
-set -e
-# Docker credentials are per-user and the GHCR package is private; reuse the
-# login that already exists under ubuntu rather than storing a second token.
-export DOCKER_CONFIG=/home/ubuntu/.docker
-cd /etc/hundo
-# -f is required: docker-compose.prod.yml is not one of the default names
-# Compose searches for (compose.yaml/yml, docker-compose.yaml/yml).
-docker compose -p hundo -f docker-compose.prod.yml pull backend
-docker compose -p hundo -f docker-compose.prod.yml up -d --no-deps backend
-DEPLOY
-  chown root:root "$DEPLOY_SCRIPT"
-  chmod 0755 "$DEPLOY_SCRIPT"
-  say 'written root:root 0755'
+  install -o root -g root -m 0755 "$DEPLOY_DIR/deploy-hundo" "$DEPLOY_SCRIPT"
+  say "installed from $DEPLOY_DIR/deploy-hundo"
 }
 
 install_sudoers() {
@@ -111,65 +104,16 @@ install_authorized_key() {
 
 write_config_dir() {
   step "Config: $CONF_DIR"
+  for f in docker-compose.prod.yml init-db.sh; do
+    [ -r "$DEPLOY_DIR/$f" ] || die "missing $DEPLOY_DIR/$f — copy the repo's deploy/ directory alongside scripts/"
+  done
   # 0755, as /etc convention. Confidentiality comes from .env being 0600
-  # root-only, not from hiding the directory — and 0750 only broke the
-  # operator's ability to cd in and read the compose file.
+  # root-only, not from hiding the directory.
   install -d -o root -g root -m 0755 "$CONF_DIR"
-
-  cat > "$CONF_DIR/init-db.sh" <<'INITDB'
-#!/bin/sh
-# Runs once, only when the Postgres data directory is empty.
-# Creates the app role: owns the hundo database so entrypoint migrations keep
-# working, but is NOT a superuser — no COPY FROM PROGRAM, no pg_read_file,
-# no role creation, no access to other databases.
-set -e
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<SQL
-CREATE ROLE hundo_app LOGIN PASSWORD '$HUNDO_APP_PASSWORD';
-ALTER DATABASE $POSTGRES_DB OWNER TO hundo_app;
-SQL
-INITDB
-  chmod 0755 "$CONF_DIR/init-db.sh"
-
-  cat > "$CONF_DIR/docker-compose.prod.yml" <<'COMPOSE'
-# Live production config. Kept in sync with the repo's
-# docker-compose.prod.example.yml, which is a reference copy only.
-services:
-  postgres:
-    image: postgres:16.14-alpine
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: hundo
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    image: ghcr.io/heinhtetoo/hundo/backend:latest
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      DATABASE_URL: >-
-        postgresql://hundo_app:${HUNDO_APP_PASSWORD}@postgres:5432/hundo
-    ports:
-      - '127.0.0.1:3000:3000'
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
-COMPOSE
-  chown root:root "$CONF_DIR/docker-compose.prod.yml"
-  chmod 0644 "$CONF_DIR/docker-compose.prod.yml"
-  say 'compose + init-db.sh written'
+  install -o root -g root -m 0644 \
+    "$DEPLOY_DIR/docker-compose.prod.yml" "$CONF_DIR/docker-compose.prod.yml"
+  install -o root -g root -m 0755 "$DEPLOY_DIR/init-db.sh" "$CONF_DIR/init-db.sh"
+  say "installed from $DEPLOY_DIR"
 }
 
 write_env() {

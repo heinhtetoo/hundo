@@ -78,8 +78,10 @@ Two consequences agents and the orchestrator must know:
   app's `DATABASE_URL`.
 - **Production config** lives in `/etc/hundo/` on the host, root-owned:
   `docker-compose.prod.yml`, `.env` at `0600`, and `init-db.sh`. The repo's
-  `docker-compose.prod.example.yml` is a reference copy and is never deployed —
-  deploying it would let a compromised pipeline rewrite volume mounts.
+  `deploy/` directory is the single source for those files plus
+  `/usr/local/bin/deploy-hundo`, installed by `scripts/setup-deploy-host.sh`.
+  Applied **by hand, never by CI** — the compose file controls volume mounts,
+  so a pipeline able to rewrite it could mount the host filesystem.
 - **CI/CD**: GitHub Actions on push to `main` — Vitest suite, then deploy over
   **OpenSSH on port 7422** (tailnet-only) as the CI-only `hundo-deploy` account.
   Port 22 on the tailnet is Tailscale SSH, which authenticates by tailnet

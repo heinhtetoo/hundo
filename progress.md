@@ -920,13 +920,18 @@ not reviewable in the repo at all. The "never deploy compose from the repo"
 rule was about **CI** being able to rewrite volume mounts; a human applying it
 by hand is a different trust level, so one source of truth is fine.
 
-- [ ] Move the compose file to `deploy/docker-compose.prod.yml` as the single
+- [x] Move the compose file to `deploy/docker-compose.prod.yml` as the single
       source, applied by hand, never by CI
-- [ ] Move the embedded init script out to `deploy/init-db.sh` so the
+- [x] Move the embedded init script out to `deploy/init-db.sh` so the
       role-creation SQL is version-controlled and reviewable
-- [ ] `setup-deploy-host.sh` reads both from `deploy/` relative to itself and
-      fails loudly if either is missing; delete the embedded heredocs
-- [ ] Delete `docker-compose.prod.example.yml` and both hand-sync notes
+- [x] Also move the embedded deploy script to `deploy/deploy-hundo` — not in
+      the original plan, but it means shellcheck can lint it, which it cannot
+      do inside a heredoc. All three host files now lint clean
+- [x] `setup-deploy-host.sh` reads all three from `deploy/` relative to itself
+      (overridable with `DEPLOY_DIR=`) and fails in preconditions if any is
+      missing; embedded heredocs gone except the templated sshd drop-in.
+      260 → 235 lines
+- [x] Delete `docker-compose.prod.example.yml` and both hand-sync notes
 - [ ] Re-run the script on the host: must stay idempotent and produce files
       byte-identical to what is already live
 
