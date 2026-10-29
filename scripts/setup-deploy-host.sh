@@ -35,7 +35,13 @@ check_preconditions() {
   grep -rq '^Include /etc/ssh/sshd_config.d/' /etc/ssh/sshd_config \
     || die 'sshd_config has no Include for sshd_config.d — aborting'
   if ss -tlnH "sport = :$SSH_PORT" | grep -q .; then
-    die "port $SSH_PORT is already in use"
+    # On a re-run sshd legitimately holds the port because we put it there.
+    # Only refuse if something else has taken it.
+    if [ -f "$SSHD_DROPIN" ] && ss -tlnpH "sport = :$SSH_PORT" | grep -q 'sshd'; then
+      say "port $SSH_PORT already served by sshd via our drop-in — re-run, fine"
+    else
+      die "port $SSH_PORT is in use by something that is not this setup"
+    fi
   fi
   [ -r "$OLD_ENV" ] || die "cannot read existing env to carry over: $OLD_ENV"
   say "ok — port $SSH_PORT free, sshd_config.d honoured, source env readable"
