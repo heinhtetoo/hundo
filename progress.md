@@ -824,11 +824,12 @@ Postgres up by hand before T8.
 
 ### T2. Repo — CI workflow
 
-- [ ] Deploy step: add `port: 7422`
-- [ ] Deploy step: `username` from `OCI_USER` (now `hundo-deploy`), key from the
-      rotated `OCI_SSH_KEY`
-- [ ] Build step: push `:${{ github.sha }}` alongside `:latest`
-- [ ] Reduce the inline `script:` body and comment why — the forced command
+- [x] Deploy step: add `port: 7422`
+- [x] Deploy step: `username` from `OCI_USER` (now `hundo-deploy`), key from the
+      rotated `OCI_SSH_KEY` — secret names unchanged, so no file change; values
+      are set in T6
+- [x] Build step: push `:${{ github.sha }}` alongside `:latest`
+- [x] Reduce the inline `script:` body and comment why — the forced command
       overrides whatever CI sends
 
 ### T3. Repo — compose example + docs

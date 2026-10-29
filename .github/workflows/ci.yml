@@ -107,7 +107,9 @@ jobs:
           file: ./server/Dockerfile
           push: true
           platforms: linux/arm64
-          tags: ghcr.io/${{ github.repository }}/backend:latest
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
@@ -116,13 +118,17 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
+      # Port 7422 is OpenSSH; port 22 on the tailnet is Tailscale SSH, which
+      # authenticates by tailnet identity and ignores OCI_SSH_KEY entirely.
+      # The deploy account pins a forced command in authorized_keys, so sshd
+      # runs /usr/local/bin/deploy-hundo and discards whatever `script` sends.
+      # Keeping the real steps on the host is what stops a compromised
+      # pipeline rewriting the compose file to mount the host filesystem.
       - name: Deploy to OCI
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.OCI_HOST }}
+          port: 7422
           username: ${{ secrets.OCI_USER }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          script: |
-            cd ~/docker-blackx6/hundo
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+          script: deploy
