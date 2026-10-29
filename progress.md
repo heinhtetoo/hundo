@@ -885,8 +885,9 @@ Postgres up by hand before T8.
 - [ ] Tailscale policy: `hosts: {"oci": "100.108.46.45"}` plus an `acls` entry
       `src: ["tag:ci"] → dst: ["oci:7422"]`. No `ssh` section change; the
       existing laptop rule is untouched
-- [ ] Confirm 7422 is reachable over the tailnet; if OCI's iptables blocks it,
-      add a rule scoped to `tailscale0`, never a blanket open
+- [x] Confirm 7422 is reachable over the tailnet — verified from a tailnet
+      peer: answers `SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.18`, so Tailscale
+      traffic reaches it with no iptables rule needed. No firewall change
 
 ### T7. Wipe + fresh Postgres
 
@@ -953,5 +954,10 @@ by hand is a different trust level, so one source of truth is fine.
       local dev moved in lockstep
 - [ ] Rotate `RESEND_API_KEY` / `RAWG_API_KEY` if the accepted risk is revisited
 - [ ] Move the other five stacks out of `/home/ubuntu/docker-blackx6/`
+- [ ] Restrict public port 22 at the host firewall. iptables currently accepts
+      `--dport 22` from any source with no source restriction, and admin access
+      runs over Tailscale SSH anyway, so the public path is unused surface.
+      Needs care: iptables changes affect five other stacks, and OCI persists
+      rules in `/etc/iptables/rules.v4`
 - [ ] Pull-based deploy (server polls GHCR) to remove inbound access entirely
 - [ ] `gh auth refresh -s read:packages` to confirm which tags exist today
