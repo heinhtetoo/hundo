@@ -68,8 +68,10 @@ set -e
 # login that already exists under ubuntu rather than storing a second token.
 export DOCKER_CONFIG=/home/ubuntu/.docker
 cd /etc/hundo
-docker compose -p hundo pull backend
-docker compose -p hundo up -d --no-deps backend
+# -f is required: docker-compose.prod.yml is not one of the default names
+# Compose searches for (compose.yaml/yml, docker-compose.yaml/yml).
+docker compose -p hundo -f docker-compose.prod.yml pull backend
+docker compose -p hundo -f docker-compose.prod.yml up -d --no-deps backend
 DEPLOY
   chown root:root "$DEPLOY_SCRIPT"
   chmod 0755 "$DEPLOY_SCRIPT"
@@ -189,6 +191,14 @@ write_env() {
   say 'RESEND_API_KEY and RAWG_API_KEY carried over unrotated (accepted risk)'
 }
 
+verify_compose() {
+  step 'Compose sanity check'
+  # Runs the exact flags the deploy script uses, so a missing -f or a parse
+  # error surfaces here rather than on the next CI deploy.
+  ( cd "$CONF_DIR" && docker compose -p hundo -f docker-compose.prod.yml config -q )
+  say 'parses with the same flags the deploy script uses'
+}
+
 # Effective sshd config for ubuntu connecting on port 22. The port list and
 # the listenaddress lines sshd derives from the NEW port are excluded, since
 # adding a port is the intended change; a change to port 22's own binding, or
@@ -270,5 +280,6 @@ install_sudoers
 install_authorized_key
 write_config_dir
 write_env
+verify_compose
 configure_sshd
 report
