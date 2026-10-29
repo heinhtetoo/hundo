@@ -892,12 +892,13 @@ Postgres up by hand before T8.
 
 ### T7. Wipe + fresh Postgres
 
-- [ ] `docker compose -p hundo down` from the old directory
-- [ ] `docker volume rm hundo_postgres_data` — leave the other project's
+- [x] `docker compose -p hundo down` from the old directory
+- [x] `docker volume rm hundo_postgres_data` — leave the other project's
       `docker_db_data` untouched
-- [ ] `docker compose -p hundo up -d postgres` from `/etc/hundo` so the fresh
+- [x] `docker compose -p hundo up -d postgres` from `/etc/hundo` so the fresh
       volume initialises and `init-db.sh` runs
-- [ ] Confirm `SELECT rolsuper FROM pg_roles WHERE rolname='hundo_app'` is false
+- [x] Confirm `SELECT rolsuper FROM pg_roles WHERE rolname='hundo_app'` is false
+      — returned `postgres|t`, `hundo_app|f`
 
 ### T8. First hardened deploy
 
