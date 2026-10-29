@@ -186,11 +186,20 @@ write_env() {
   say 'RESEND_API_KEY and RAWG_API_KEY carried over unrotated (accepted risk)'
 }
 
+# Effective sshd config for ubuntu connecting on port 22. The port list and
+# the listenaddress lines sshd derives from the NEW port are excluded, since
+# adding a port is the intended change; a change to port 22's own binding, or
+# to any auth setting, still shows up.
+effective_config_for_ubuntu_on_22() {
+  sshd -T -C user=ubuntu,host=localhost,addr=127.0.0.1,laddr=127.0.0.1,lport=22 \
+    | grep -vE "^port |^listenaddress .*:${SSH_PORT}$" \
+    | sort
+}
+
 configure_sshd() {
   step "sshd on port $SSH_PORT"
   local before after
-  before=$(sshd -T -C user=ubuntu,host=localhost,addr=127.0.0.1,laddr=127.0.0.1,lport=22 \
-    | grep -v '^port ' | sort)
+  before=$(effective_config_for_ubuntu_on_22)
 
   cat > "$SSHD_DROPIN" <<CONF
 # Hundo CI deploy path. Port 22 MUST stay listed: any Port directive replaces
@@ -219,11 +228,11 @@ CONF
     die 'sshd config invalid — drop-in removed, nothing reloaded'
   fi
 
-  after=$(sshd -T -C user=ubuntu,host=localhost,addr=127.0.0.1,laddr=127.0.0.1,lport=22 \
-    | grep -v '^port ' | sort)
+  after=$(effective_config_for_ubuntu_on_22)
   if [ "$before" != "$after" ]; then
+    printf '\n  unexpected differences (< before, > after):\n' >&2
+    diff <(printf '%s\n' "$before") <(printf '%s\n' "$after") >&2 || true
     rm -f "$SSHD_DROPIN"
-    printf '%s\n' "$(diff <(printf '%s\n' "$before") <(printf '%s\n' "$after") || true)" >&2
     die 'effective config for ubuntu on port 22 changed — drop-in removed'
   fi
   say 'preflight: ubuntu@:22 effective config unchanged'
