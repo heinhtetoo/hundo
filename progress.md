@@ -984,4 +984,7 @@ by hand is a different trust level, so one source of truth is fine.
       current hole. Needs care: iptables affects five other stacks, and OCI
       persists rules in `/etc/iptables/rules.v4`
 - [ ] Pull-based deploy (server polls GHCR) to remove inbound access entirely
+- [x] Skip CI on docs-only pushes via `paths-ignore` on the `push` trigger.
+      Not applied to `pull_request`: a skipped run reports no status, so a
+      docs-only PR would block on a required check that never arrives
 - [ ] `gh auth refresh -s read:packages` to confirm which tags exist today

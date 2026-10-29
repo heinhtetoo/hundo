@@ -3,6 +3,13 @@ name: CI/CD
 on:
   push:
     branches: [main, dev]
+    # Without this a docs-only push rebuilds the backend image and restarts
+    # the container for nothing. Deliberately NOT set on pull_request: a
+    # skipped run reports no status at all, so a docs-only PR would wait
+    # forever on a required check that never arrives.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [dev]
 
