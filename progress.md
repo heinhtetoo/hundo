@@ -859,10 +859,13 @@ Postgres up by hand before T8.
 - [x] Capture `sshd -T -C user=ubuntu,...,lport=22` before and after; `sshd -t`
       to validate; `systemctl reload ssh`, never `restart` — ran clean; not
       socket-activated, so the Port directive path applied
-- [ ] Identify ubuntu's single existing `authorized_keys` entry — it is an
-      `ssh-rsa` key with **no comment**, so identify it by fingerprint instead
-      and decide with the user whether to remove it — it is probably the old
-      unrestricted CI key, but may be the only break-glass if Tailscale SSH fails
+- [x] Identify ubuntu's single existing `authorized_keys` entry — an `ssh-rsa`
+      key with no comment. Resolved without needing to identify it: the key is
+      **inert**. Tailnet port 22 is served by tailscaled, which never consults
+      `authorized_keys`; port 7422 is restricted to `hundo-deploy`; and both
+      ports are filtered from the internet at the OCI security list. So it is
+      neither an exposure nor a break-glass path. Left in place — removal is
+      optional tidiness, not a fix
 
 ### T5. Server — /etc/hundo config
 
@@ -956,10 +959,11 @@ by hand is a different trust level, so one source of truth is fine.
       local dev moved in lockstep
 - [ ] Rotate `RESEND_API_KEY` / `RAWG_API_KEY` if the accepted risk is revisited
 - [ ] Move the other five stacks out of `/home/ubuntu/docker-blackx6/`
-- [ ] Restrict public port 22 at the host firewall. iptables currently accepts
-      `--dport 22` from any source with no source restriction, and admin access
-      runs over Tailscale SSH anyway, so the public path is unused surface.
-      Needs care: iptables changes affect five other stacks, and OCI persists
-      rules in `/etc/iptables/rules.v4`
+- [ ] Tidy the redundant iptables `--dport 22 -j ACCEPT` rule. Lower priority
+      than first thought: external probes show 22 and 7422 both filtered at the
+      OCI security list, so the host rule grants nothing today. It only becomes
+      live if that security list is ever opened — a latent trap rather than a
+      current hole. Needs care: iptables affects five other stacks, and OCI
+      persists rules in `/etc/iptables/rules.v4`
 - [ ] Pull-based deploy (server polls GHCR) to remove inbound access entirely
 - [ ] `gh auth refresh -s read:packages` to confirm which tags exist today
