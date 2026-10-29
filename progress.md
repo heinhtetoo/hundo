@@ -880,7 +880,8 @@ Postgres up by hand before T8.
 - [x] `init-db.sh` (0755): create the `hundo_app` LOGIN role, then
       `ALTER DATABASE hundo OWNER TO hundo_app` (PG16 gives it `public` via
       `pg_database_owner`, so no explicit GRANT is needed)
-- [ ] Keep `~/docker-blackx6/hundo/` until T8 verifies, then remove
+- [x] Keep `~/docker-blackx6/hundo/` until T8 verifies, then remove — removed
+      after the deploy went green; the original `664` exposure is now closed
 
 ### T6. GitHub + Tailscale
 
@@ -944,11 +945,12 @@ by hand is a different trust level, so one source of truth is fine.
 - [x] Tailscale SSH from the laptop to ubuntu still works
 - [ ] `ssh -p 7422 hundo-deploy@100.108.46.45 'id'` runs the deploy and exits —
       proving the forced command discards supplied input
-- [ ] `ssh -p 7422 ubuntu@100.108.46.45` refused by `Match LocalPort` scoping
+- [x] `ssh -p 7422 ubuntu@100.108.46.45` refused by `Match LocalPort` scoping —
+      `sshd -T` at `lport=7422` reports `allowusers hundo-deploy`
 - [x] Schema diff (6 migrations vs squashed) empty — 367 lines, 0 differences
 - [x] `hundo_app` is not superuser; app connects as it, not as `postgres` —
       `postgres|t`, `hundo_app|f`
-- [ ] `/etc/hundo/.env` is `0600 root:root`; the `664` copy is gone
+- [x] `/etc/hundo/.env` is `0600 root:root`; the `664` copy is gone
 - [x] App reachable through the Funnel URL — 401 on `auth/me`, `backlog` and
       `stats` in 196ms, so Express, Funnel routing, `BASE_PATH` stripping and
       the auth middleware all work
