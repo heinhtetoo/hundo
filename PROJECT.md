@@ -68,11 +68,26 @@ Two consequences agents and the orchestrator must know:
   backend so cookies stay same-origin (this is what keeps Safari ITP off your back —
   do not "simplify" it away).
 - **Backend** deploys as a Docker container to the OCI 3-core box, exposed via
-  Tailscale Funnel. `BASE_PATH=/hundo/api` makes Express strip the tunnel prefix.
-- **Postgres** runs in a container on the same box, volume-mounted to block storage.
-- **CI/CD**: GitHub Actions on push to `main` — Vitest suite, then SSH deploy to OCI
-  via the Tailscale action (`docker compose pull && docker compose up -d`). Vercel
-  deploys itself via its GitHub integration.
+  Tailscale Funnel (`/hundo/` → `http://127.0.0.1:3000`). `BASE_PATH=/hundo/api`
+  makes Express strip the tunnel prefix. The container publishes on
+  `127.0.0.1:3000` only — the box is shared with five other stacks.
+- **Postgres** runs in a container on the same box on the named Docker volume
+  `hundo_postgres_data` under `/var/lib/docker/volumes/` — **not** block storage.
+  The app connects as `hundo_app`, which owns the `hundo` database but is **not**
+  a superuser; `postgres` is retained for admin only and must never appear in the
+  app's `DATABASE_URL`.
+- **Production config** lives in `/etc/hundo/` on the host, root-owned:
+  `docker-compose.prod.yml`, `.env` at `0600`, and `init-db.sh`. The repo's
+  `docker-compose.prod.example.yml` is a reference copy and is never deployed —
+  deploying it would let a compromised pipeline rewrite volume mounts.
+- **CI/CD**: GitHub Actions on push to `main` — Vitest suite, then deploy over
+  **OpenSSH on port 7422** (tailnet-only) as the CI-only `hundo-deploy` account.
+  Port 22 on the tailnet is Tailscale SSH, which authenticates by tailnet
+  identity and ignores `OCI_SSH_KEY`, so it cannot serve a tagged CI runner.
+  `authorized_keys` pins a forced command, so sshd runs
+  `/usr/local/bin/deploy-hundo` as root and discards whatever the action sends.
+  Images are tagged `:latest` and `:<sha>`. Vercel deploys via its own GitHub
+  integration.
 - Migrations run from the Docker entrypoint on container start.
 
 Design system: dark completionist theme, Space Grotesk, oklch semantic tokens,
@@ -242,11 +257,13 @@ critical paths — confirm at the harness ticket's plan gate:
   top-tier model for Plan and Judge, full gates regardless of ticket class, never
   the cheap/mechanical lane.
 - **Secrets**: `RAWG_API_KEY`, `RESEND_API_KEY`, `JWT_*` secrets, and the production
-  `DATABASE_URL` live in the OCI host environment and GitHub Actions secrets only.
-  Agents get `.env.example` and local/test services. No exceptions, no deviations.
+  `DATABASE_URL` live in `/etc/hundo/.env` (`root:root 0600`) on the host and in
+  GitHub Actions secrets only. Agents get `.env.example` and local/test services.
+  No exceptions, no deviations.
 - **`DEMO_MODE`** returns verification tokens in API responses so recruiters can
   self-verify. It is a showcase affordance with a real weakness (a registrant can
-  verify an address they don't own). It stays **off by default**, and no ticket may
+  verify an address they don't own). It is **off by default** and deliberately
+  **`true` in production** so the hosted showcase is self-serve; no ticket may
   extend its reach beyond the two endpoints it already touches without an explicit
   plan-gate deviation.
 - Rate limiting is per-route with independent buckets; `refresh`, `logout`, and

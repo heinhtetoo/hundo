@@ -834,15 +834,15 @@ Postgres up by hand before T8.
 
 ### T3. Repo — compose example + docs
 
-- [ ] Rename `docker-compose.prod.yml` → `docker-compose.prod.example.yml`;
+- [x] Rename `docker-compose.prod.yml` → `docker-compose.prod.example.yml`;
       hardcode `ghcr.io/heinhtetoo/hundo/backend:latest`; add `env_file: .env` to
       postgres; header stating `/etc/hundo` holds the live config
-- [ ] `PROJECT.md` §2: correct "volume-mounted to block storage" — it is a plain
+- [x] `PROJECT.md` §2: correct "volume-mounted to block storage" — it is a plain
       named Docker volume under `/var/lib/docker/volumes/`
-- [ ] `PROJECT.md` §2: record the new deploy topology (port 7422,
+- [x] `PROJECT.md` §2: record the new deploy topology (port 7422,
       `hundo-deploy`, forced command, root + `DOCKER_CONFIG`)
-- [ ] `PROJECT.md` §7: record `DEMO_MODE=true` in production as intentional
-- [ ] `docs/` decision record for this session, including deferred ideas
+- [x] `PROJECT.md` §7: record `DEMO_MODE=true` in production as intentional
+- [x] `docs/` decision record for this session, including deferred ideas
 
 ### T4. Server — deploy account + sshd
 
