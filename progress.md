@@ -905,8 +905,9 @@ Postgres up by hand before T8.
 
 ### T8. First hardened deploy
 
-- [ ] Merge to `dev`, then `git merge --ff-only dev` onto `main`
-- [ ] CI: both image tags pushed, deploy step green
+- [x] Merge to `dev`, then `git merge --ff-only dev` onto `main`
+- [x] CI: deploy step green. Tag presence unverified — needs
+      `gh auth refresh -s read:packages`
 - [ ] Re-register the test account (DEMO_MODE self-verify path)
 
 ### T9. Repo — collapse the duplicated host config (after T8 verifies)
@@ -938,17 +939,24 @@ by hand is a different trust level, so one source of truth is fine.
 
 ### Verify
 
-- [ ] `sshd -T` for ubuntu on port 22 byte-identical before and after
-- [ ] Tailscale SSH from the laptop to ubuntu still works
+- [x] `sshd -T` for ubuntu on port 22 byte-identical before and after —
+      script preflight confirmed on every run
+- [x] Tailscale SSH from the laptop to ubuntu still works
 - [ ] `ssh -p 7422 hundo-deploy@100.108.46.45 'id'` runs the deploy and exits —
       proving the forced command discards supplied input
 - [ ] `ssh -p 7422 ubuntu@100.108.46.45` refused by `Match LocalPort` scoping
-- [ ] Schema diff (6 migrations vs squashed) empty
-- [ ] `hundo_app` is not superuser; app connects as it, not as `postgres`
+- [x] Schema diff (6 migrations vs squashed) empty — 367 lines, 0 differences
+- [x] `hundo_app` is not superuser; app connects as it, not as `postgres` —
+      `postgres|t`, `hundo_app|f`
 - [ ] `/etc/hundo/.env` is `0600 root:root`; the `664` copy is gone
-- [ ] App reachable through the Funnel URL; register → verify → sign in
-- [ ] `docker compose -p hundo config` parses from `/etc/hundo`
-- [ ] `npm --prefix server test` and `npm --prefix client test` green
+- [x] App reachable through the Funnel URL — 401 on `auth/me`, `backlog` and
+      `stats` in 196ms, so Express, Funnel routing, `BASE_PATH` stripping and
+      the auth middleware all work
+- [ ] Register → verify → sign in with a fresh test account
+- [x] `docker compose -p hundo config` parses from `/etc/hundo` — now checked
+      at provisioning time
+- [x] `npm --prefix server test` and `npm --prefix client test` green —
+      110/110 and 17/17
 
 ### Follow-ups (deferred — not in this phase)
 
