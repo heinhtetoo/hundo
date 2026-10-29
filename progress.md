@@ -846,32 +846,34 @@ Postgres up by hand before T8.
 
 ### T4. Server — deploy account + sshd
 
-- [ ] `useradd -m -s /bin/bash hundo-deploy`; do not add to `docker`
-- [ ] `/usr/local/bin/deploy-hundo` (root:root 0755): export
+- [x] `useradd -m -s /bin/bash hundo-deploy`; do not add to `docker`
+- [x] `/usr/local/bin/deploy-hundo` (root:root 0755): export
       `DOCKER_CONFIG=/home/ubuntu/.docker`, `cd /etc/hundo`, pull backend,
       `up -d --no-deps backend`
-- [ ] `/etc/sudoers.d/hundo-deploy` — one command only; validate with `visudo -c`
-- [ ] `authorized_keys`: `command="sudo -n /usr/local/bin/deploy-hundo",restrict`
-- [ ] `/etc/ssh/sshd_config.d/99-hundo-ci.conf`: `Port 22`, `Port 7422`,
+- [x] `/etc/sudoers.d/hundo-deploy` — one command only; validate with `visudo -c`
+- [x] `authorized_keys`: `command="sudo -n /usr/local/bin/deploy-hundo",restrict`
+- [x] `/etc/ssh/sshd_config.d/99-hundo-ci.conf`: `Port 22`, `Port 7422`,
       `Match LocalPort 7422` block, `Match all`. Listing port 22 explicitly is
       mandatory — any `Port` directive replaces the default and would strand
       every other user on the box
-- [ ] Capture `sshd -T -C user=ubuntu,...,lport=22` before and after; `sshd -t`
-      to validate; `systemctl reload ssh`, never `restart`
-- [ ] Show the comment field of ubuntu's single existing `authorized_keys` entry
+- [x] Capture `sshd -T -C user=ubuntu,...,lport=22` before and after; `sshd -t`
+      to validate; `systemctl reload ssh`, never `restart` — ran clean; not
+      socket-activated, so the Port directive path applied
+- [ ] Identify ubuntu's single existing `authorized_keys` entry — it is an
+      `ssh-rsa` key with **no comment**, so identify it by fingerprint instead
       and decide with the user whether to remove it — it is probably the old
       unrestricted CI key, but may be the only break-glass if Tailscale SSH fails
 
 ### T5. Server — /etc/hundo config
 
-- [ ] `install -d -o root -g root -m 0750 /etc/hundo`
-- [ ] `docker-compose.prod.yml` (0644): postgres pinned to `16.14-alpine`,
+- [x] `install -d -o root -g root -m 0750 /etc/hundo`
+- [x] `docker-compose.prod.yml` (0644): postgres pinned to `16.14-alpine`,
       init-script mount, `DATABASE_URL` via `hundo_app`, backend published on
       `127.0.0.1:3000:3000`
-- [ ] `.env` (0600): new `POSTGRES_PASSWORD`, new `HUNDO_APP_PASSWORD`, new JWT
+- [x] `.env` (0600): new `POSTGRES_PASSWORD`, new `HUNDO_APP_PASSWORD`, new JWT
       secrets; carry over `RAWG_API_KEY`, `RESEND_API_KEY`, `EMAIL_*`,
       `BASE_PATH`, `CLIENT_URL`, `DEMO_MODE`
-- [ ] `init-db.sh` (0755): create the `hundo_app` LOGIN role, then
+- [x] `init-db.sh` (0755): create the `hundo_app` LOGIN role, then
       `ALTER DATABASE hundo OWNER TO hundo_app` (PG16 gives it `public` via
       `pg_database_owner`, so no explicit GRANT is needed)
 - [ ] Keep `~/docker-blackx6/hundo/` until T8 verifies, then remove
