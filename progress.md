@@ -811,15 +811,16 @@ Postgres up by hand before T8.
 
 ### T1. Repo — squash migrations
 
-- [ ] Run all 6 migrations into a throwaway container; capture
+- [x] Run all 6 migrations into a throwaway container; capture
       `pg_dump --schema-only` as the reference
-- [ ] Write one baseline migration reproducing it exactly — `users`, `games`,
+- [x] Write one baseline migration reproducing it exactly — `users`, `games`,
       `backlog_entries`, `auth_tokens`, `game_collections`, the status enum, all
       indexes and FK constraints
-- [ ] Delete the 6 superseded migration files
-- [ ] Prove equivalence: fresh DB + squashed vs fresh DB + 6, `diff` of
-      `pg_dump --schema-only` must be empty
-- [ ] `npm --prefix server test` green against a rebuilt local test DB
+- [x] Delete the 6 superseded migration files
+- [x] Prove equivalence: fresh DB + squashed vs fresh DB + 6, `diff` of
+      `pg_dump --schema-only` must be empty — 367 lines compared, 0 differences
+- [x] `npm --prefix server test` green against a rebuilt local test DB —
+      110/110
 
 ### T2. Repo — CI workflow
 
@@ -863,7 +864,7 @@ Postgres up by hand before T8.
 ### T5. Server — /etc/hundo config
 
 - [ ] `install -d -o root -g root -m 0750 /etc/hundo`
-- [ ] `docker-compose.prod.yml` (0644): postgres pinned to an exact 16.x patch,
+- [ ] `docker-compose.prod.yml` (0644): postgres pinned to `16.14-alpine`,
       init-script mount, `DATABASE_URL` via `hundo_app`, backend published on
       `127.0.0.1:3000:3000`
 - [ ] `.env` (0600): new `POSTGRES_PASSWORD`, new `HUNDO_APP_PASSWORD`, new JWT
