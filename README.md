@@ -23,3 +23,20 @@ A passing run prints two Vitest summaries, server then client, and exits 0:
  Test Files  2 passed (2)
       Tests  17 passed (17)
 ```
+
+## How a change lands
+
+1. Cut your branch from `dev`, the integration branch, and open the PR
+   against `dev`.
+2. The PR runs CI (`.github/workflows/ci.yml`) with two jobs:
+   - **Test:** starts a Postgres 16 container, runs `npm ci` in `server`,
+     applies migrations to `hundo_test`, then runs the server tests.
+   - **Test client:** runs `npm ci` and the tests in `client`.
+
+   A PR never deploys.
+3. Once merged, the change sits on `dev`. `main` only ever advances by
+   fast-forward from `dev`: no direct commits, no PRs, no hotfixes.
+4. A push to `main` runs the same two test jobs, then deploys the backend
+   once both pass. Vercel also deploys the frontend from `main`.
+
+See `PROJECT.md` §2 for the full branch rules.
