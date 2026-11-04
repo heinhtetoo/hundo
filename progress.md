@@ -1016,12 +1016,13 @@ Judge's install must change nothing git would commit.
 
 ### T1. Regenerate the lockfile with the pinned npm
 
-- [ ] `npm --prefix server install` under Node 20.20.2 / npm 10.8.2 — expect a
-      30-line deletion and nothing else
+- [x] `npm --prefix server install` under Node 20.20.2 / npm 10.8.2 — expect a
+      30-line deletion and nothing else — 30 deletions, 0 additions, and every
+      removed line belongs to a `libc` block
 - [ ] Prove idempotence: fresh clone → `install:all` → `git status --short`
       prints nothing
 - [ ] Prove `npm ci` still resolves against the regenerated lockfile
-- [ ] Server suite still green
+- [x] Server suite still green — 110/110
 
 ### T2. Remove the install-command ambiguity in `PROJECT.md`
 
