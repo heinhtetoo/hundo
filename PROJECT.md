@@ -132,9 +132,18 @@ agents-never-touch-prod-credentials rule, and the deviation procedure itself.
 Verified against the repo 2026-08-14. Not npm workspaces — the root delegates with
 `--prefix`, and each package has its own lockfile.
 
+**Which install to use.** `ci:all` runs `npm ci`, which never writes a
+lockfile, so it is the only safe choice anywhere the tree must stay clean —
+fresh clones, `git worktree` checkouts, CI, and any agent whose diff is
+reviewed. `install:all` runs `npm install`, which may rewrite a lockfile, and
+is for deliberately changing dependencies. Reaching for `install:all` in a
+fresh worktree is what produced hundo#26.
+
 ```bash
 # install everything
-npm run install:all           # root + server + client
+npm run ci:all                # fresh checkout / CI — leaves the tree clean
+npm run install:all           # only when changing dependencies; may rewrite
+                              # a lockfile
 
 # local development
 npm run dev                   # concurrently: server (node --watch) + client (vite)

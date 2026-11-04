@@ -1019,26 +1019,27 @@ Judge's install must change nothing git would commit.
 - [x] `npm --prefix server install` under Node 20.20.2 / npm 10.8.2 — expect a
       30-line deletion and nothing else — 30 deletions, 0 additions, and every
       removed line belongs to a `libc` block
-- [ ] Prove idempotence: fresh clone → `install:all` → `git status --short`
+- [x] Prove idempotence: fresh clone → `install:all` → `git status --short`
       prints nothing
-- [ ] Prove `npm ci` still resolves against the regenerated lockfile
+- [x] Prove `npm ci` still resolves against the regenerated lockfile — same
+      228 packages
 - [x] Server suite still green — 110/110
 
 ### T2. Remove the install-command ambiguity in `PROJECT.md`
 
-- [ ] §4 currently lists `npm run install:all` unlabelled, while §2 and
+- [x] §4 currently lists `npm run install:all` unlabelled, while §2 and
       `README.md` both prescribe `npm run ci:all`. Label which is for what:
       `ci:all` for a fresh checkout and anything that must leave the tree
       clean, `install:all` only when deliberately changing dependencies
-- [ ] Both scripts stay — they have genuinely different jobs; the defect is the
+- [x] Both scripts stay — they have genuinely different jobs; the defect is the
       missing guidance, not the script
 
 ### Verify
 
-- [ ] Fresh clone of the branch → `npm run ci:all` → `git status --short` empty
-- [ ] Fresh clone of the branch → `npm run install:all` → `git status --short`
+- [x] Fresh clone of the branch → `npm run ci:all` → `git status --short` empty
+- [x] Fresh clone of the branch → `npm run install:all` → `git status --short`
       empty
-- [ ] `npm --prefix server test` green
+- [x] `npm --prefix server test` green — 110/110
 
 ### Findings / follow-ups
 
