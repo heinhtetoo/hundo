@@ -988,3 +988,67 @@ by hand is a different trust level, so one source of truth is fine.
       Not applied to `pull_request`: a skipped run reports no status, so a
       docs-only PR would block on a required check that never arrives
 - [ ] `gh auth refresh -s read:packages` to confirm which tags exist today
+
+## Phase 21 — A fresh install must leave the tree clean (hundo#26)
+
+`npm run install:all` in a fresh worktree rewrites `server/package-lock.json`, so
+a clean checkout is no longer clean after its own install. This blocks styr's
+Phase C: a Build would commit the rewritten lockfile alongside its change, and a
+Judge's install must change nothing git would commit.
+
+### Diagnosis (reproduced, not assumed)
+
+- **Root cause.** The committed `server/package-lock.json` carries 10 `"libc"`
+  fields on optional native binaries — `@rolldown/binding-linux-*` and
+  `lightningcss-linux-*`, both transitive through Vitest 4 → Vite 7. `libc` is
+  a field **npm 11+ emits**. The pin is Node 20.20.2 / npm 10.8.2, which does
+  not, so `npm install` strips all 30 lines. The diff is pure deletions — no
+  additions, no version churn.
+- **The lockfile is ahead of the pin, not behind it.** The issue's leading
+  hypothesis ("written by a different npm version than the pinned Node's") has
+  the right instinct and the wrong direction. Something ran an install in
+  `server/` with npm 11+ and committed the result.
+- **The issue's second hypothesis is not the cause, but is a valid guard.**
+  `npm ci` never writes a lockfile; verified that it leaves the tree clean.
+- **Asymmetry explained.** `libc` entries exist only in server's lockfile —
+  root 0, client 0 — which is why `client` is unaffected despite also using
+  Vitest 4.
+
+### T1. Regenerate the lockfile with the pinned npm
+
+- [ ] `npm --prefix server install` under Node 20.20.2 / npm 10.8.2 — expect a
+      30-line deletion and nothing else
+- [ ] Prove idempotence: fresh clone → `install:all` → `git status --short`
+      prints nothing
+- [ ] Prove `npm ci` still resolves against the regenerated lockfile
+- [ ] Server suite still green
+
+### T2. Remove the install-command ambiguity in `PROJECT.md`
+
+- [ ] §4 currently lists `npm run install:all` unlabelled, while §2 and
+      `README.md` both prescribe `npm run ci:all`. Label which is for what:
+      `ci:all` for a fresh checkout and anything that must leave the tree
+      clean, `install:all` only when deliberately changing dependencies
+- [ ] Both scripts stay — they have genuinely different jobs; the defect is the
+      missing guidance, not the script
+
+### Verify
+
+- [ ] Fresh clone of the branch → `npm run ci:all` → `git status --short` empty
+- [ ] Fresh clone of the branch → `npm run install:all` → `git status --short`
+      empty
+- [ ] `npm --prefix server test` green
+
+### Findings / follow-ups
+
+- [ ] **Nothing enforces the pin.** No package declares `engines`, so a newer
+      npm rewrites the lockfile silently instead of failing. `engines` plus
+      `engine-strict=true` would make the mismatch loud — not done here,
+      because it would also hard-fail anyone on a different Node, which is a
+      judgement call rather than an obvious win
+- [ ] Stripping `libc` means npm can no longer distinguish glibc from musl for
+      those optional binaries, so Linux CI may fetch a musl variant it cannot
+      use. Harmless waste. The fix from the other direction is §8 item 2, the
+      Node/npm bump, which would emit `libc` again — at which point this
+      lockfile should be regenerated once more, under the new pin
+- [ ] Local `main` is 1 commit behind `origin/main` (unrelated to this work)
