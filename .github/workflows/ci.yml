@@ -28,7 +28,9 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: hundo_test
+          # hundo_test is deliberately NOT created here: the suite's
+          # globalSetup creates it, so every CI run exercises that path while
+          # local runs exercise the already-exists path.
         ports:
           - 5432:5432
         options: >-
@@ -49,13 +51,6 @@ jobs:
       - name: Install server dependencies
         run: npm ci
         working-directory: server
-
-      - name: Run migrations
-        run: npm run migrate:up
-        working-directory: server
-        env:
-          DATABASE_URL: >-
-            postgresql://postgres:password@localhost:5432/hundo_test
 
       - name: Run tests
         run: npm test

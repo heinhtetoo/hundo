@@ -160,7 +160,12 @@ npm --prefix client run test              # vitest run
 npm --prefix client run test:watch
 npm --prefix client run test:coverage     # vitest run --coverage (v8, no thresholds)
 
-# migrations
+# migrations — for the dev and prod databases only.
+# The test database migrates itself; see the test-database notes below.
+# TRAP: the node-pg-migrate v8 CLI loads server/.env itself, and that file
+# points DATABASE_URL at the dev database `hundo`. A bare migrate:up therefore
+# migrates `hundo`, not whatever you had in mind. Prefix the variable to win —
+# dotenv never overrides one already set in the environment.
 npm --prefix server run migrate:up
 npm --prefix server run migrate:down
 npm --prefix server run migrate:create -- <name>
@@ -178,8 +183,29 @@ npm --prefix client run build
   unless the resolved **`DATABASE_URL`** names a test database.
   `server/src/test/resolve-database-url.js` owns the environment-or-fallback resolution.
 - It is a **local Postgres instance**, _not_ the compose service (compose uses host
-  `postgres`, database `hundo` — a different database). The test DB must exist
-  locally before the suite runs.
+  `postgres`, database `hundo` — a different database).
+- **The suite prepares its own database.** `globalSetup`
+  (`server/src/test/global-setup.js`) runs once per `vitest` invocation, in the
+  **main** process, in this order: resolve `DATABASE_URL` → test-database guard →
+  create the database if absent → `node-pg-migrate` `up` with
+  `migrationsTable: 'pgmigrations'`. It never migrates down and never drops
+  anything. The guard runs before anything opens a socket, so the harness can
+  never create or alter tables in `hundo` (#15).
+- Consequences worth knowing: the role needs **`CREATEDB`** the first time on a
+  host (never again, since the database is not dropped); `globalSetup` runs once
+  per invocation, so under `--watch` a migration added mid-session is not picked
+  up until the watcher restarts; and a ledger that has drifted from the files on
+  disk is fixed by **dropping the test database**, never by editing
+  `pgmigrations`.
+- `globalSetup` must not import `server/src/db.js` — that module builds a `pg.Pool`
+  at import time and nothing in the main process would close it, which hangs
+  Vitest on exit. It also cannot use the repo's named-export convention: Vitest
+  requires a bare exported function there.
+- Two `node-pg-migrate@8` behaviours are load-bearing and were verified rather than
+  assumed, so re-check them on any major bump: `runner({ databaseUrl })` closes the
+  client it created (a caller-supplied `dbClient` would leak), and the runner already
+  ignores dotfiles, so `ignorePattern` must **not** be passed — it replaces that
+  default rather than extending it, which would feed `migrations/.gitkeep` back in.
 - `NODE_ENV=test` no-ops rate limiting and email sending. RAWG is stubbed with fake
   data — no network calls, no quota burn, no flakiness.
 - `setupFiles` truncates `backlog_entries`, `games`, `users`, `auth_tokens`, and
@@ -322,9 +348,10 @@ Repo inspected 2026-08-14; all seven original questions resolved and folded into
       or defer, so agents get one instruction set.
 - [x] Confirm how CI provisions Postgres for the Vitest run today — a
       `postgres:16-alpine` service container on the default port.
-      `.github/workflows/ci.yml` now passes `DATABASE_URL` to both the migrate and test
-      steps explicitly, rather than the test step riding on vitest.config.js's
-      fallback (#4).
+      `.github/workflows/ci.yml` passes `DATABASE_URL` to the test step explicitly,
+      rather than riding on vitest.config.js's fallback (#4). The separate migrate
+      step is gone, and the service container no longer pre-creates `hundo_test`, so
+      CI exercises the create-and-migrate path on every run (#15).
 - [ ] Add a `server` `test:coverage` script — the 70% gate has been unmeasurable
       since it was written. Filed as hundo#7.
 - [x] Decide whether `client` gets its own `vitest.config` or shares the root
