@@ -1068,3 +1068,110 @@ Actions minutes.
       Node/npm bump, which would emit `libc` again — at which point this
       lockfile should be regenerated once more, under the new pin
 - [ ] Local `main` is 1 commit behind `origin/main` (unrelated to this work)
+
+## Phase 22 — Apply migrations to the test database in globalSetup (hundo#15)
+
+The harness assumes an already-migrated test database: it connects and expects
+the tables to exist. Under styr, Build (Mac) and Judge (OCI) use separate test
+databases, so a ticket that adds a migration passes on whichever host was
+migrated by hand and fails on the other — looking like a bug in the ticket
+rather than a harness gap, and appearing intermittent because it is
+order-dependent.
+
+Today's failure mode compounds it: the first thing to touch the database is the
+`afterEach` truncate, so a missing schema surfaces as
+`relation "backlog_entries" does not exist` *after* a test body has already
+failed for an unrelated-looking reason.
+
+### Locked decisions (from grilling)
+
+- **Create the database when absent**, then migrate. Safe because nothing ever
+  drops it — the truncate clears rows only and deliberately excludes
+  `pgmigrations` — so creation happens once per host, not once per run.
+- **Remove CI's separate `Run migrations` step.** If CI pre-migrates, the new
+  path is a no-op there and a broken `globalSetup` would ship green.
+- **Also drop `POSTGRES_DB: hundo_test`** from CI's postgres service, so CI
+  exercises create→migrate on every push while local runs exercise
+  exists→migrate. Full branch coverage with no destructive test code.
+- **Fix the dotenv trap** in the docs as part of this.
+
+### Verified before building (not assumed)
+
+- `runner({ databaseUrl })` **closes its own client** (`finally { … db.close() }`);
+  only a caller-supplied `dbClient` leaks. So pass `databaseUrl` — no `finally`
+  of ours, no hang on exit.
+- The runner **already ignores dotfiles** (default regexp `^\..*`), so
+  `migrations/.gitkeep` is safe. `ignorePattern` must **not** be passed — it
+  replaces that default and would feed `.gitkeep` back in as a migration.
+- **A CJS `globalSetup` must export a bare function.** Vitest requires
+  `default`/`setup`/`teardown` to be functions, and both `module.exports = {…}`
+  and `exports.setup = fn` populate `default` with an *object*. Only
+  `module.exports = <function>` works, its resolved value must be
+  undefined/null/a teardown fn (`runner()` resolves to an array, so await and
+  discard), and Vitest calls `setup(this)` — hence an arrow wrapper.
+- `pg.escapeIdentifier` exists top-level in `pg@8.22.0`.
+- Programmatic defaults differ from the CLI's: `migrationsTable` has **no**
+  default (omitting it yields `CREATE TABLE "public"."undefined"`), `schema` is
+  unset, and `singleTransaction` is **false**. All three must be passed for
+  parity with the step being deleted.
+
+### One-time host remedy
+
+This Mac's `hundo_test` ledger holds the six **pre-squash** migration names
+while `server/migrations/` holds only the baseline, because the squash
+(`a1b5542`) landed after that ledger was written. `globalSetup` therefore
+refuses with `Not run migration 1793284016890_initial-schema is preceding
+already run migration 1782372592942_create-users` — which is correct
+behaviour, not a defect in this change. Fixed once with `dropdb hundo_test`,
+which also exercises the create branch. **Production is unaffected:** Phase 20
+wiped `hundo_postgres_data`, so its ledger matches disk.
+
+### T1. The harness changes
+
+- [ ] `server/src/test/ensure-test-database.js` — probe the target first; treat
+      only `3D000` as absent so auth/port errors propagate; create via a
+      maintenance URL (`pathname = '/postgres'`); quote with
+      `pg.escapeIdentifier` since DDL cannot be parameterised; catch only
+      `42P04` for the concurrent-creator race. No `DROP DATABASE`, ever
+- [ ] `server/src/test/migrate-test-database.js` — guard → ensure → `runner()`.
+      `assertTestDatabase` is the first statement, before anything opens a
+      socket. Takes the URL as an argument so it is testable with a hostile one
+- [ ] `server/src/test/global-setup.js` — 4-line adapter, the one file that
+      cannot follow the named-export convention
+- [ ] `server/vitest.config.js` — add `globalSetup`; leave `setup.js` untouched
+
+### T2. CI and docs
+
+- [ ] `.github/workflows/ci.yml` — delete the `Run migrations` step and
+      `POSTGRES_DB: hundo_test`
+- [ ] `README.md` — drop the manual migrate step; **replace the false claim**
+      that `migrate:up` "has no fallback" with the real dotenv trap; add the
+      `dropdb` remedy; fix the "How a change lands" bullet
+- [ ] `PROJECT.md` §4 — the new contract, the test-only scope of `migrate:*`,
+      the dotenv trap, `--watch` not picking up new migrations mid-session, and
+      the `CREATEDB` requirement on first use
+- [ ] `PROJECT.md` §9 — the bullet about `ci.yml` passing `DATABASE_URL` to
+      "both the migrate and test steps" is now stale
+
+### T3. Tests (`server/test/harness.test.js`, 124 lines, cap 300)
+
+- [ ] Ledger matches the migration files on disk — the assertion that proves
+      auto-migration ran, and the one that would have caught the drift above
+- [ ] All five truncated tables plus `pgmigrations` exist, keyed off the
+      truncate list rather than a hand-copied one
+- [ ] `pgmigrations` survives truncation
+- [ ] The guard precedes any connection: `migrateTestDatabase` against
+      `…@127.0.0.1:1/hundo` rejects with the guard's message, not a connection
+      error
+- [ ] `maintenanceUrlFor` / `databaseNameFrom` — pure, no DB
+
+### Verify
+
+- [ ] `dropdb hundo_test`, then `npm test` green with exactly one ledger row
+- [ ] Second `npm test` green — the exists path, "No migrations to run!"
+- [ ] Clean exit, no hung-pool warning
+- [ ] `DATABASE_URL=…/hundo npm --prefix server run test` refuses, and `hundo`
+      is **not** created
+- [ ] A new migration is picked up with no manual step
+- [ ] `npm --prefix server run test -- test/harness.test.js` still runs setup
+- [ ] CI green with no `Run migrations` step, log shows `hundo_test` created
