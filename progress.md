@@ -1153,7 +1153,7 @@ wiped `hundo_postgres_data`, so its ledger matches disk.
 - [ ] `PROJECT.md` §9 — the bullet about `ci.yml` passing `DATABASE_URL` to
       "both the migrate and test steps" is now stale
 
-### T3. Tests (`server/test/harness.test.js`, 124 lines, cap 300)
+### T3. Tests (`server/test/harness.test.js`, 124 → 201 lines, cap 300)
 
 - [ ] Ledger matches the migration files on disk — the assertion that proves
       auto-migration ran, and the one that would have caught the drift above
