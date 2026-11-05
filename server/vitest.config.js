@@ -6,6 +6,7 @@ module.exports = defineConfig({
     environment: 'node',
     globals: true,
     fileParallelism: false,
+    globalSetup: ['./src/test/global-setup.js'],
     setupFiles: ['./src/test/setup.js'],
     env: {
       DATABASE_URL: resolveDatabaseUrl(process.env),

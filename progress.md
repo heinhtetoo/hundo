@@ -1128,17 +1128,17 @@ wiped `hundo_postgres_data`, so its ledger matches disk.
 
 ### T1. The harness changes
 
-- [ ] `server/src/test/ensure-test-database.js` — probe the target first; treat
+- [x] `server/src/test/ensure-test-database.js` — probe the target first; treat
       only `3D000` as absent so auth/port errors propagate; create via a
       maintenance URL (`pathname = '/postgres'`); quote with
       `pg.escapeIdentifier` since DDL cannot be parameterised; catch only
       `42P04` for the concurrent-creator race. No `DROP DATABASE`, ever
-- [ ] `server/src/test/migrate-test-database.js` — guard → ensure → `runner()`.
+- [x] `server/src/test/migrate-test-database.js` — guard → ensure → `runner()`.
       `assertTestDatabase` is the first statement, before anything opens a
       socket. Takes the URL as an argument so it is testable with a hostile one
-- [ ] `server/src/test/global-setup.js` — 4-line adapter, the one file that
+- [x] `server/src/test/global-setup.js` — 4-line adapter, the one file that
       cannot follow the named-export convention
-- [ ] `server/vitest.config.js` — add `globalSetup`; leave `setup.js` untouched
+- [x] `server/vitest.config.js` — add `globalSetup`; leave `setup.js` untouched
 
 ### T2. CI and docs
 
