@@ -1142,15 +1142,15 @@ wiped `hundo_postgres_data`, so its ledger matches disk.
 
 ### T2. CI and docs
 
-- [ ] `.github/workflows/ci.yml` — delete the `Run migrations` step and
+- [x] `.github/workflows/ci.yml` — delete the `Run migrations` step and
       `POSTGRES_DB: hundo_test`
-- [ ] `README.md` — drop the manual migrate step; **replace the false claim**
+- [x] `README.md` — drop the manual migrate step; **replace the false claim**
       that `migrate:up` "has no fallback" with the real dotenv trap; add the
       `dropdb` remedy; fix the "How a change lands" bullet
-- [ ] `PROJECT.md` §4 — the new contract, the test-only scope of `migrate:*`,
+- [x] `PROJECT.md` §4 — the new contract, the test-only scope of `migrate:*`,
       the dotenv trap, `--watch` not picking up new migrations mid-session, and
       the `CREATEDB` requirement on first use
-- [ ] `PROJECT.md` §9 — the bullet about `ci.yml` passing `DATABASE_URL` to
+- [x] `PROJECT.md` §9 — the bullet about `ci.yml` passing `DATABASE_URL` to
       "both the migrate and test steps" is now stale
 
 ### T3. Tests (`server/test/harness.test.js`, 124 → 201 lines, cap 300)
