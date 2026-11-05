@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import PublicLayout from './components/PublicLayout.jsx';
-import AppLayout from './components/AppLayout.jsx';
+import { AppLayout } from './components/AppLayout.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -17,7 +17,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 
 const queryClient = new QueryClient();
 
-export default function App() {
+export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

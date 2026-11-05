@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Navbar from './Navbar.jsx';
 import MobileTabBar from './MobileTabBar.jsx';
 
-export default function AppLayout() {
+export function AppLayout() {
   const { isAuthenticated } = useAuth();
 
   return (
