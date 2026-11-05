@@ -1155,23 +1155,27 @@ wiped `hundo_postgres_data`, so its ledger matches disk.
 
 ### T3. Tests (`server/test/harness.test.js`, 124 → 201 lines, cap 300)
 
-- [ ] Ledger matches the migration files on disk — the assertion that proves
+- [x] Ledger matches the migration files on disk — the assertion that proves
       auto-migration ran, and the one that would have caught the drift above
-- [ ] All five truncated tables plus `pgmigrations` exist, keyed off the
+- [x] All five truncated tables plus `pgmigrations` exist, keyed off the
       truncate list rather than a hand-copied one
-- [ ] `pgmigrations` survives truncation
-- [ ] The guard precedes any connection: `migrateTestDatabase` against
+- [x] `pgmigrations` survives truncation
+- [x] The guard precedes any connection: `migrateTestDatabase` against
       `…@127.0.0.1:1/hundo` rejects with the guard's message, not a connection
       error
-- [ ] `maintenanceUrlFor` / `databaseNameFrom` — pure, no DB
+- [x] `maintenanceUrlFor` / `databaseNameFrom` — pure, no DB
 
 ### Verify
 
-- [ ] `dropdb hundo_test`, then `npm test` green with exactly one ledger row
-- [ ] Second `npm test` green — the exists path, "No migrations to run!"
-- [ ] Clean exit, no hung-pool warning
-- [ ] `DATABASE_URL=…/hundo npm --prefix server run test` refuses, and `hundo`
+- [x] `dropdb hundo_test`, then `npm test` green with exactly one ledger row
+- [x] Second `npm test` green — the exists path, "No migrations to run!"
+- [x] Clean exit, no hung-pool warning
+- [x] `DATABASE_URL=…/hundo npm --prefix server run test` refuses, and `hundo`
       is **not** created
-- [ ] A new migration is picked up with no manual step
-- [ ] `npm --prefix server run test -- test/harness.test.js` still runs setup
+- [x] A new migration is picked up with no manual step — a throwaway migration
+      was applied unprompted and the ledger-matches-disk test passed with two
+      entries, proving it tracks disk rather than asserting a constant. Removed
+      the file and dropped the database afterwards, since an applied-but-deleted
+      migration recreates exactly the drift this phase opens with
+- [x] `npm --prefix server run test -- test/harness.test.js` still runs setup
 - [ ] CI green with no `Run migrations` step, log shows `hundo_test` created
