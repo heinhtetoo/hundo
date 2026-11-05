@@ -1041,6 +1041,20 @@ Judge's install must change nothing git would commit.
       empty
 - [x] `npm --prefix server test` green — 110/110
 
+### Outcome
+
+Merged into `dev` as `b0a2698` (PR #27, squashed); hundo#26 closed by hand,
+since a PR based on `dev` does not trigger GitHub's closing keywords.
+
+Verified *after* the merge from a fresh clone of `origin/dev` rather than a
+local copy, so it tests what the squash actually produced: `install:all` and
+`ci:all` both leave `git status --short` empty.
+
+CI on the PR sat `queued` with empty logs through a GitHub Actions incident,
+then completed green with no intervention — unrelated to this change. See
+`docs/ARCHITECTURE.md` for how to tell that symptom apart from exhausted
+Actions minutes.
+
 ### Findings / follow-ups
 
 - [ ] **Nothing enforces the pin.** No package declares `engines`, so a newer

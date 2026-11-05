@@ -150,3 +150,12 @@ only thing CI can run.
   — **401 is the healthy answer**, since the endpoint requires a login
 - **`sshd -T` errors** on this box unless given `-C ...,lport=NN`. Expected:
   the `Match LocalPort` rule requires it
+- **A CI run stuck `queued` with empty logs** is not hung — no runner has
+  claimed the job, so there is nothing to stream. Check whether it is GitHub's
+  end:
+  `curl -s https://www.githubstatus.com/api/v2/summary.json | grep -A2 '"name": "Actions"'`.
+  Queued runs are picked up when capacity returns; re-running just joins the
+  back of the same queue. **Once this repo is private, the identical symptom
+  also means Actions minutes are exhausted** — public repos get them free and
+  unmetered, private ones do not, and the two causes look the same in the UI.
+  The status check above is what separates them
