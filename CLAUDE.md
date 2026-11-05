@@ -1,3 +1,7 @@
+> styr pipeline sessions (PM, Build, Judge) follow their own role file. Where
+> this file differs from it (checking in with a user, plan mode, keeping a
+> progress log), the role file wins.
+
 # Self-Improvement Rules
 
 ---
